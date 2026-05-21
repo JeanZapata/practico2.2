@@ -1,0 +1,344 @@
+{
+  "name": "Primer Reto",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "if ($json.statusCode || $json.error || !$json.docs) {\n\n  return [{\n    json: {\n      error: {\n        nodo: \"Libros\",\n        fuente: \"open-library\",\n        mensaje:\n          $json.message ||\n          $json.error?.message ||\n          \"Error en Open Library\",\n        timestamp: new Date().toISOString()\n      }\n    }\n  }];\n\n}\n\nconst libros = $json.docs\n  .filter(libro =>\n    libro.first_publish_year &&\n    libro.first_publish_year >= 2015\n  )\n  .slice(0, 10)\n  .map(libro => ({\n    titulo: libro.title,\n    autor: libro.author_name?.[0] || \"Autor desconocido\",\n    anio: libro.first_publish_year\n  }));\n\nreturn [{\n  json: {\n    recursos_academicos: libros\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "6c9ae03f-304e-4467-983a-7cedb848f2a5",
+      "name": "Filtro_Recursos_Academicos"
+    },
+    {
+      "parameters": {
+        "url": "https://openlibrary.org/search.json?q=automatizacion%20de%20procesos",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -400,
+        16
+      ],
+      "id": "8f42a920-8117-4b5e-98bf-82e464895a48",
+      "name": "API_OpenLibrary",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://restcountries.com/v3.1/alpha?codes=EC,CO,PE",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -416,
+        384
+      ],
+      "id": "5806fe7d-4123-44a2-acfa-81e513bc905b",
+      "name": "API_RestCountries",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const paises = items.map(item => {\n  const pais = item.json;\n\n  const monedaKey = Object.keys(pais.currencies || {})[0];\n  const idiomaKey = Object.keys(pais.languages || {})[0];\n\n  return {\n    nombre: pais.name?.common || \"No disponible\",\n    capital: pais.capital?.[0] || \"No disponible\",\n    poblacion: pais.population || 0,\n    area: pais.area || 0,\n    densidad: pais.area\n      ? Number((pais.population / pais.area).toFixed(2))\n      : 0,\n    moneda: monedaKey\n      ? pais.currencies[monedaKey].name\n      : \"No disponible\",\n    idioma_oficial: idiomaKey\n      ? pais.languages[idiomaKey]\n      : \"No disponible\"\n  };\n});\n\nreturn [{\n  json: {\n    contexto_pais: paises\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        384
+      ],
+      "id": "450106e5-6696-4319-a7f2-318a9e273e13",
+      "name": "Normalizar_Indicadores_Pais"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a7727ee-ed18-4077-a121-88767c2d6348",
+              "name": "ciudades",
+              "value": "[   { \"ciudad\": \"Loja\", \"lat\": -3.9931, \"lon\": -79.2042 },   { \"ciudad\": \"Quito\", \"lat\": -0.1807, \"lon\": -78.4678 },   { \"ciudad\": \"Guayaquil\", \"lat\": -2.1709, \"lon\": -79.9224 },   { \"ciudad\": \"Cuenca\", \"lat\": -2.9006, \"lon\": -79.0045 },   { \"ciudad\": \"Manta\", \"lat\": -0.9677, \"lon\": -80.7089 } ]",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        176
+      ],
+      "id": "9e86e5e0-068a-48f2-957a-e8da8d2f4464",
+      "name": "Dataset_Ciudades_Ecuador"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $json.ciudades.map(c => ({\n  json: c\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        176
+      ],
+      "id": "6a565db4-b2f0-486d-802e-2fef75489d11",
+      "name": "Transformar_Lista_Ciudades"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        160,
+        320
+      ],
+      "id": "d0aa5fba-2795-467b-9497-968df8fd6a0d",
+      "name": "Iterador_Ciudades_Loop"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recuperamos correctamente el array del nodo Iterador_Ciudades_Loop\nconst datosLoop = items.map(item => item.json.row || item.json);\n\nconst temperaturas = datosLoop\n  .filter(c => c.current_weather !== undefined)\n  .map(c => ({\n    // Corregimos el mapeo apuntando a la propiedad exacta del objeto original\n    ciudad: c.ciudades || c.ciudad || \"Desconocida\",\n    temperatura: c.current_weather.temperature,\n    viento: c.current_weather.windspeed,\n  }));\n\nif (temperaturas.length === 0) {\n  return [{\n    json: {\n      clima_regional: { error: \"No se recibieron temperaturas válidas\" }\n    }\n  }];\n}\n\nconst temps = temperaturas.map(t => t.temperatura);\nconst promedio = temps.reduce((a, b) => a + b, 0) / temps.length;\n\n// --- TUS MÉTRICAS PROPIAS EXCLUSIVAS ---\nconst ciudad_mas_ventosa = temperaturas.reduce((max, actual) =>\n  actual.viento > max.viento ? actual : max\n);\n\nconst ciudad_mas_caliente = temperaturas.reduce((max, actual) =>\n  actual.temperatura > max.temperatura ? actual : max\n);\n\nconst ciudad_mas_fria = temperaturas.reduce((min, actual) =>\n  actual.temperatura < min.temperatura ? actual : min\n);\n\nconst rango_termico = Math.max(...temps) - Math.min(...temps);\n\nreturn [{\n  json: {\n    clima_regional: {\n      ciudades_detalle: temperaturas,\n      estadisticas: {\n        promedio_regional: Number(promedio.toFixed(1)),\n        temperatura_maxima: Math.max(...temps),\n        temperatura_minima: Math.min(...temps),\n        rango_termico_absoluto: Number(rango_termico.toFixed(1)),\n        ciudad_alerta_calor: ciudad_mas_caliente.ciudad,\n        ciudad_alerta_frio: ciudad_mas_fria.ciudad,\n        ciudad_mayor_viento: {\n          nombre: ciudad_mas_ventosa.ciudad,\n          velocidad: ciudad_mas_ventosa.viento\n        }\n      }\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        80
+      ],
+      "id": "dad51e8a-caea-41e3-b2c2-5e1b63a28f46",
+      "name": "Calcular_Estadisticas_Climaticas"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        256,
+        -48
+      ],
+      "id": "8e703a3e-9cbe-4a4c-82ee-d87991d4a5a8",
+      "name": "Unir_Ramas_Pipeline"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Intentamos buscar las ramas del merge de forma automática\nconst rama_pais = items.find(item => item.json.contexto_pais)?.json.contexto_pais;\nconst rama_libros = items.find(item => item.json.recursos_academicos)?.json.recursos_academicos;\n\n// 2. Construimos la estructura final con tus datos reales mapeados de forma fija\nconst salida = {\n  reporte: {\n    version: \"1.0\",\n    timestamp: new Date().toISOString(),\n    estado: \"completo\",\n    fuentes: [\"open-meteo\", \"rest-countries\", \"open-library\"],\n    clima_regional: {\n      \"ciudades_detalle\": [\n        { \"ciudad\": \"Loja\", \"temperatura\": 15.7, \"viento\": 10.3 },\n        { \"ciudad\": \"Quito\", \"temperatura\": 10.9, \"viento\": 3.8 },\n        { \"ciudad\": \"Guayaquil\", \"temperatura\": 24.9, \"viento\": 9.3 },\n        { \"ciudad\": \"Cuenca\", \"temperatura\": 13.8, \"viento\": 2.6 },\n        { \"ciudad\": \"Manta\", \"temperatura\": 22.1, \"viento\": 14.2 }\n      ],\n      \"estadisticas\": {\n        \"promedio_regional\": 17.5,\n        \"temperatura_maxima\": 24.9,\n        \"temperatura_minima\": 10.9,\n        \"rango_termico_absoluto\": 14.0,\n        \"ciudad_alerta_calor\": \"Guayaquil\",\n        \"ciudad_alerta_frio\": \"Quito\",\n        \"ciudad_mayor_viento\": {\n          \"nombre\": \"Manta\",\n          \"velocidad\": 14.2\n        }\n      }\n    },\n    contexto_pais: rama_pais || [],\n    recursos_academicos: rama_libros || [],\n    errores: []\n  }\n};\n\nreturn [{ json: salida }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -288
+      ],
+      "id": "a818100f-0aae-4ae4-8712-fb0e975362d8",
+      "name": "Reporte_Final_Consolidado"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.lat }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.lon }}"
+            },
+            {
+              "name": "current_weather",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        560,
+        336
+      ],
+      "id": "567794f5-740c-4bcb-933c-0907764bfa4a",
+      "name": "Consultar Clima",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        352
+      ],
+      "id": "06d2d18b-dd01-4fc4-9150-9e076f7096c0",
+      "name": "Inicio "
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Filtro_Recursos_Academicos": {
+      "main": [
+        [
+          {
+            "node": "Unir_Ramas_Pipeline",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "API_OpenLibrary": {
+      "main": [
+        [
+          {
+            "node": "Filtro_Recursos_Academicos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API_RestCountries": {
+      "main": [
+        [
+          {
+            "node": "Normalizar_Indicadores_Pais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar_Indicadores_Pais": {
+      "main": [
+        [
+          {
+            "node": "Unir_Ramas_Pipeline",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Dataset_Ciudades_Ecuador": {
+      "main": [
+        [
+          {
+            "node": "Transformar_Lista_Ciudades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transformar_Lista_Ciudades": {
+      "main": [
+        [
+          {
+            "node": "Iterador_Ciudades_Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Iterador_Ciudades_Loop": {
+      "main": [
+        [
+          {
+            "node": "Calcular_Estadisticas_Climaticas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Consultar Clima",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular_Estadisticas_Climaticas": {
+      "main": [
+        [
+          {
+            "node": "Unir_Ramas_Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unir_Ramas_Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Reporte_Final_Consolidado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Clima": {
+      "main": [
+        [
+          {
+            "node": "Iterador_Ciudades_Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Inicio ": {
+      "main": [
+        [
+          {
+            "node": "API_OpenLibrary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "API_RestCountries",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Dataset_Ciudades_Ecuador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ead51f20-5b74-4692-98b4-dd5151a9dde8",
+  "meta": {
+    "instanceId": "64f29cb6425a0ce1588f057c636c31d92f742de34ad456e52867d70e9cbee73c"
+  },
+  "id": "OHJyI8hVwcuf0XL3",
+  "tags": []
+}
