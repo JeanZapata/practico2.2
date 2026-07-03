@@ -1,0 +1,417 @@
+{
+  "name": "Extractor Diario BCE",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://contenido.bce.fin.ec/documentos/informacioneconomica/indicadores/general/datos_diarios.json",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        976,
+        1616
+      ],
+      "id": "53dd4139-429f-411e-bf58-3f29bd9e232e",
+      "name": "HTTP_BCE_WTI",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://contenido.bce.fin.ec/documentos/informacioneconomica/indicadores/general/datos_formulario.json",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        976,
+        1904
+      ],
+      "id": "816eca64-235e-446b-9c96-d2c1df6625ab",
+      "name": "HTTP_BCE_RiesgoPais",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '');\nconst nombreArchivo = `bce_wti_${fecha}.json`;\nconst rutaArchivo = `/home/node/datos_macroentorno/bce/sector_externo/${nombreArchivo}`;\n\nconst contenido = JSON.stringify($input.all().map(item => item.json), null, 2);\n\nreturn [\n  {\n    json: {\n      nombre_archivo: nombreArchivo,\n      ruta_archivo: rutaArchivo\n    },\n    binary: {\n      data: {\n        data: Buffer.from(contenido, 'utf8').toString('base64'),\n        mimeType: 'application/json',\n        fileName: nombreArchivo\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        1600
+      ],
+      "id": "b31c2757-ca89-44ae-91b9-d8d69f870d76",
+      "name": "Preparar_JSON_BCE_WTI"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.ruta_archivo }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        1600
+      ],
+      "id": "59819290-9f9e-4c48-b179-26637de1d3d0",
+      "name": "Guardar_JSON_BCE_WTI"
+    },
+    {
+      "parameters": {
+        "jsCode": "const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '');\nconst nombreArchivo = `bce_riesgo_pais_${fecha}.json`;\nconst rutaArchivo = `/home/node/datos_macroentorno/bce/publicaciones/${nombreArchivo}`;\n\nconst contenido = JSON.stringify($input.all().map(item => item.json), null, 2);\n\nreturn [\n  {\n    json: {\n      nombre_archivo: nombreArchivo,\n      ruta_archivo: rutaArchivo\n    },\n    binary: {\n      data: {\n        data: Buffer.from(contenido, 'utf8').toString('base64'),\n        mimeType: 'application/json',\n        fileName: nombreArchivo\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        2176
+      ],
+      "id": "3defccd3-c99a-4329-9fe6-791b1cad9595",
+      "name": "Preparar_JSON_BCE_RiesgoPais"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ $json.ruta_archivo }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1504,
+        2176
+      ],
+      "id": "4ba21d64-1fea-41cb-8d74-272ef8c3192c",
+      "name": "Guardar_JSON_BCE_RiesgoPais"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        720,
+        1808
+      ],
+      "id": "ea984459-101c-4207-9da5-09abf8e74cf4",
+      "name": "Ejecucion_Manual_Diaria"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        2032
+      ],
+      "id": "ddbf0c11-8c53-44fa-9e9d-6d291ca479f2",
+      "name": "Disparador_Diario_BCE"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawItems = $input.all();\nlet errorIngesta = null;\nlet registrosRaw = [];\n\n// =========================================================================\n// FASE 1: CAPTURA SEGURA Y TRATAMIENTO DE ERRORES HTTP\n// =========================================================================\ntry {\n  // Evaluamos si el nodo HTTP Request anterior reportó un fallo controlado\n  if (rawItems[0] && rawItems[0].json && rawItems[0].json.error) {\n    errorIngesta = rawItems[0].json.error.message || \"Fallo en el servicio de indicadores generales del BCE.\";\n  } else {\n    registrosRaw = rawItems[0]?.json?.view_ind_generales || [];\n  }\n} catch (e) {\n  errorIngesta = e.message || \"Error al procesar la estructura de datos del BCE.\";\n}\n\n// =========================================================================\n// CONTINGENCIA A: EL SERVIDOR DEL BCE NO RESPONDIÓ (FALLO DE RED)\n// =========================================================================\nif (errorIngesta) {\n  const hoy = new Date();\n  const fechaFallback = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;\n  \n  return [{\n    json: {\n      INDICADOR: \"PRECIO_PETROLEO_WTI\",\n      FECHA_FISCAL: `${fechaFallback}_ERR_BCE`, // Llave controlada anti-sobreescritura\n      FECHA_EXTRACCION: hoy,\n      ESTADO: \"INCOMPLETO\",\n      NECESITA_RESPALDO: 1, // Enciende la alerta de auditoría\n      DETALLE_ERROR: `Fallo Crítico Ingesta: ${errorIngesta}`.substring(0, 4000),\n      DATOS_JSON: JSON.stringify({ error: true, fase: \"HTTP_GET\", detalle: errorIngesta })\n    }\n  }];\n}\n\n// FASE 2: FILTRADO INTELIGENTE (Inmunidad contra Mojibake)\nconst datosPetroleo = registrosRaw.filter(item => \n  item[\"CÃ³digo Variable DinÃ¡mica\"] === \"val_ind_0001\" || \n  item[\"Código Variable Dinámica\"] === \"val_ind_0001\"\n);\n\n// =========================================================================\n// CONTINGENCIA B: EL ARCHIVO LLEGÓ PERO NO CONTIENE EL INDICADOR WTI\n// =========================================================================\nif (datosPetroleo.length === 0) {\n  const hoy = new Date();\n  const fechaFallback = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;\n  \n  return [{\n    json: {\n      INDICADOR: \"PRECIO_PETROLEO_WTI\",\n      FECHA_FISCAL: `${fechaFallback}_VACIO`,\n      FECHA_EXTRACCION: hoy,\n      ESTADO: \"INCOMPLETO\",\n      NECESITA_RESPALDO: 1,\n      DETALLE_ERROR: \"Error de verificación: No se encontraron registros válidos para el código val_ind_0001.\",\n      DATOS_JSON: JSON.stringify({ fuente: \"Banco Central del Ecuador\", estatus: \"Estructura incompleta sin indicador WTI\" })\n    }\n  }];\n}\n\n// =========================================================================\n// FASE 3: MAPEO TRANSACCIONAL IDEMPOTENTE (CASO DE ÉXITO)\n// =========================================================================\nreturn datosPetroleo.map(item => {\n  const valorNumerico = parseFloat(item.Valor);\n  const esValido = !isNaN(valorNumerico);\n\n  return {\n    json: {\n      INDICADOR: \"PRECIO_PETROLEO_WTI\",\n      FECHA_FISCAL: item.Fecha ? item.Fecha.toString().trim() : \"SIN_FECHA\",\n      FECHA_EXTRACCION: new Date(),\n      ESTADO: esValido ? \"COMPLETO\" : \"INCOMPLETO\",\n      NECESITA_RESPALDO: esValido ? 0 : 1,\n      DETALLE_ERROR: esValido ? \"\" : \"Valor histórico con formato no numérico.\",\n      DATOS_JSON: JSON.stringify({\n        fecha_fiscal: item.Fecha,\n        valor: esValido ? valorNumerico : null,\n        indicador_limpio: \"Precio Petróleo (WTI)\",\n        medida: \"USD por barril\",\n        fuente: \"Banco Central del Ecuador\",\n        ruta_logica: \"BCE/SECTOR_EXTERNO/PETROLEO_WTI\"\n      })\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        1808
+      ],
+      "id": "b5e4d51b-ee62-4756-bd32-b9b9c060aea8",
+      "name": "Normalizar_Datos_WTI"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawItems = $input.all();\nlet errorIngesta = null;\nlet registrosRaw = [];\n\n// =========================================================================\n// FASE 1: CAPTURA SEGURA Y TRATAMIENTO DE ERRORES HTTP\n// =========================================================================\ntry {\n  // Evaluamos si el nodo HTTP Request anterior reportó un fallo controlado\n  if (rawItems[0] && rawItems[0].json && rawItems[0].json.error) {\n    errorIngesta = rawItems[0].json.error.message || \"Fallo en el servicio de formularios del BCE.\";\n  } else {\n    registrosRaw = rawItems[0]?.json?.view_ind_formulario || [];\n  }\n} catch (e) {\n  errorIngesta = e.message || \"Error al procesar la estructura de formularios del BCE.\";\n}\n\n// =========================================================================\n// CONTINGENCIA A: EL SERVIDOR DEL BCE NO RESPONDIÓ (FALLO DE RED)\n// =========================================================================\nif (errorIngesta) {\n  const hoy = new Date();\n  const fechaFallback = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;\n  \n  return [{\n    json: {\n      INDICADOR: \"RIESGO_PAIS\",\n      FECHA_FISCAL: `${fechaFallback}_ERR_BCE`, \n      FECHA_EXTRACCION: hoy,\n      ESTADO: \"INCOMPLETO\",\n      NECESITA_RESPALDO: 1, // Enciende la alerta de auditoría\n      DETALLE_ERROR: `Fallo Crítico Ingesta: ${errorIngesta}`.substring(0, 4000),\n      DATOS_JSON: JSON.stringify({ error: true, fase: \"HTTP_GET\", detalle: errorIngesta })\n    }\n  }];\n}\n\n// FASE 2: FILTRADO INMUTABLE (Riesgo País \"val_ind_0003\")\nconst datosRiesgo = registrosRaw.filter(item => \n  item[\"CÃ³digo Variable DinÃ¡mica\"] === \"val_ind_0003\" || \n  item[\"Código Variable Dinámica\"] === \"val_ind_0003\"\n);\n\n// =========================================================================\n// CONTINGENCIA B: EL ARCHIVO LLEGÓ PERO NO CONTIENE EL RIESGO PAÍS\n// =========================================================================\nif (datosRiesgo.length === 0) {\n  const hoy = new Date();\n  const fechaFallback = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;\n  \n  return [{\n    json: {\n      INDICADOR: \"RIESGO_PAIS\",\n      FECHA_FISCAL: `${fechaFallback}_VACIO`,\n      FECHA_EXTRACCION: hoy,\n      ESTADO: \"INCOMPLETO\",\n      NECESITA_RESPALDO: 1,\n      DETALLE_ERROR: \"Error de verificación: No se encontraron registros válidos para el código val_ind_0003.\",\n      DATOS_JSON: JSON.stringify({ fuente: \"Banco Central del Ecuador\", estatus: \"Estructura incompleta sin indicador Riesgo País\" })\n    }\n  }];\n}\n\n// =========================================================================\n// FASE 3: MAPEO TRANSACCIONAL IDEMPOTENTE (CASO DE ÉXITO)\n// =========================================================================\nreturn datosRiesgo.map(item => {\n  const valorRaw = item.Valor ? item.Valor.toString().trim().replace(',', '.') : \"\";\n  const valorNumerico = parseFloat(valorRaw);\n  const esValido = !isNaN(valorNumerico);\n\n  return {\n    json: {\n      INDICADOR: \"RIESGO_PAIS\",\n      FECHA_FISCAL: item.Fecha ? item.Fecha.toString().trim() : \"SIN_FECHA\",\n      FECHA_EXTRACCION: new Date(),\n      ESTADO: esValido ? \"COMPLETO\" : \"INCOMPLETO\",\n      NECESITA_RESPALDO: esValido ? 0 : 1,\n      DETALLE_ERROR: esValido ? \"\" : \"Valor histórico de Riesgo País con formato no numérico.\",\n      DATOS_JSON: JSON.stringify({\n        fecha_fiscal: item.Fecha,\n        valor: esValido ? valorNumerico : null,\n        indicador_limpio: \"Riesgo País\",\n        medida: \"Puntos Básicos\",\n        fuente: \"Banco Central del Ecuador\",\n        ruta_logica: \"BCE/PUBLICACIONES_GENERALES/RIESGO_PAIS\"\n      })\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        2000
+      ],
+      "id": "95b44ea7-9297-4923-8c52-a757311094f9",
+      "name": "Normalizar_Datos_Riesgo_Pais"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "ADMIN",
+          "mode": "list",
+          "cachedResultName": "ADMIN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TAB_CONSOLIDADO_MACRO",
+          "mode": "list",
+          "cachedResultName": "TAB_CONSOLIDADO_MACRO"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "NECESITA_RESPALDO": 0,
+            "ID": 0
+          },
+          "matchingColumns": [
+            "FECHA_FISCAL",
+            "INDICADOR"
+          ],
+          "schema": [
+            {
+              "id": "DATOS_JSON",
+              "displayName": "DATOS_JSON",
+              "required": false,
+              "display": true,
+              "type": "object",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DETALLE_ERROR",
+              "displayName": "DETALLE_ERROR",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ESTADO",
+              "displayName": "ESTADO",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FECHA_EXTRACCION",
+              "displayName": "FECHA_EXTRACCION",
+              "required": true,
+              "display": true,
+              "type": "dateTime",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FECHA_FISCAL",
+              "displayName": "FECHA_FISCAL",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "INDICADOR",
+              "displayName": "INDICADOR",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NECESITA_RESPALDO",
+              "displayName": "NECESITA_RESPALDO",
+              "required": true,
+              "display": true,
+              "type": "number",
+              "defaultMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.oracleDatabase",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        1888
+      ],
+      "id": "82cfd795-fbff-4626-8f95-387e9c99d3c7",
+      "name": "Cargar_Indicadores_Diarios_Oracle",
+      "credentials": {
+        "oracleDBApi": {
+          "id": "pj1OHkfwNfb3rbTy",
+          "name": "Credencial_one"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP_BCE_WTI": {
+      "main": [
+        [
+          {
+            "node": "Normalizar_Datos_WTI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar_JSON_BCE_WTI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalizar_Datos_WTI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP_BCE_RiesgoPais": {
+      "main": [
+        [
+          {
+            "node": "Normalizar_Datos_Riesgo_Pais",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar_JSON_BCE_RiesgoPais",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalizar_Datos_Riesgo_Pais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar_JSON_BCE_WTI": {
+      "main": [
+        [
+          {
+            "node": "Guardar_JSON_BCE_WTI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar_JSON_BCE_RiesgoPais": {
+      "main": [
+        [
+          {
+            "node": "Guardar_JSON_BCE_RiesgoPais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecucion_Manual_Diaria": {
+      "main": [
+        [
+          {
+            "node": "HTTP_BCE_WTI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP_BCE_RiesgoPais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disparador_Diario_BCE": {
+      "main": [
+        [
+          {
+            "node": "HTTP_BCE_WTI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP_BCE_RiesgoPais",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar_Datos_WTI": {
+      "main": [
+        [
+          {
+            "node": "Cargar_Indicadores_Diarios_Oracle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar_Datos_Riesgo_Pais": {
+      "main": [
+        [
+          {
+            "node": "Cargar_Indicadores_Diarios_Oracle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ebb0f7fb-4e8a-4594-99be-0ce5af6f12cb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "64f29cb6425a0ce1588f057c636c31d92f742de34ad456e52867d70e9cbee73c"
+  },
+  "id": "vn6vfmC4jF7gkyej",
+  "tags": []
+}
