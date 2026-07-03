@@ -1,0 +1,28 @@
+PIPELINE RPA MACROENTORNO ECUADOR
+Notificación de fallo parcial
+
+Estado: ERROR
+Fecha y hora: 2026-06-19T04:05:36.394Z
+
+Fuente procesada: mineduc_amie
+Institución: mineduc
+Categoría: amie
+Periodicidad: anual
+
+Archivo esperado:
+mineduc_amie_20260619.csv
+
+Ruta esperada:
+/home/node/datos_macroentorno/mineduc/amie/mineduc_amie_20260619.csv
+
+Log de error:
+/home/node/datos_macroentorno/logs/error_mineduc_amie_20260619_040536.json
+
+Mensaje de error:
+No se encontró binary.data en la respuesta
+
+Acción tomada:
+Se registró el incidente en logs. El pipeline puede continuar con otras fuentes sin detener toda la ejecución.
+
+Equipo destino:
+Equipo de Datos

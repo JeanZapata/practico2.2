@@ -1,0 +1,28 @@
+PIPELINE RPA MACROENTORNO ECUADOR
+Notificación de fallo parcial
+
+Estado: ERROR
+Fecha y hora: 2026-06-19T03:01:11.794Z
+
+Fuente procesada: supercias_ranking
+Institución: supercias
+Categoría: ranking
+Periodicidad: anual
+
+Archivo esperado:
+supercias_ranking_20260619.html
+
+Ruta esperada:
+/home/node/datos_macroentorno/supercias/ranking/supercias_ranking_20260619.html
+
+Log de error:
+/home/node/datos_macroentorno/logs/error_supercias_ranking_20260619_030111.json
+
+Mensaje de error:
+No se encontró binary.data en la respuesta
+
+Acción tomada:
+Se registró el incidente en logs. El pipeline puede continuar con otras fuentes sin detener toda la ejecución.
+
+Equipo destino:
+Equipo de Datos

@@ -1,0 +1,12 @@
+{
+  "fecha_hora": "2026-06-19T04:37:18.037Z",
+  "workflow": "RPA_Macroentorno_Final",
+  "fuente": "bce_riesgo_pais",
+  "institucion": "bce",
+  "categoria": "publicaciones",
+  "estado": "OK",
+  "intentos": 1,
+  "archivo_generado": "bcce_riesgo_pais_20260619.html",
+  "ruta_archivo": "/home/node/datos_macroentorno/bce/publicaciones/bcce_riesgo_pais_20260619.html",
+  "mensaje": "Archivo crudo descargado, validado y guardado correctamente"
+}

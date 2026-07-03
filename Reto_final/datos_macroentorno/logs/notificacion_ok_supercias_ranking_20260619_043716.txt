@@ -1,0 +1,25 @@
+PIPELINE RPA MACROENTORNO ECUADOR
+Notificación de ejecución correcta
+
+Estado: OK
+Fecha y hora: 2026-06-19T04:37:16.781Z
+
+Fuente procesada: supercias_ranking
+Institución: supercias
+Categoría: ranking
+Periodicidad: anual
+
+Archivo generado:
+supercias_ranking_20260619.html
+
+Ruta del archivo crudo:
+/home/node/datos_macroentorno/supercias/ranking/supercias_ranking_20260619.html
+
+Log de ejecución:
+/home/node/datos_macroentorno/logs/log_supercias_ranking_20260619_043716.json
+
+Mensaje:
+El archivo fue descargado, validado, almacenado y registrado correctamente.
+
+Equipo destino:
+Equipo de Datos

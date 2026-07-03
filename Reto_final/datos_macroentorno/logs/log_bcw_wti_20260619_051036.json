@@ -1,0 +1,13 @@
+{
+  "fecha_hora": "2026-06-19T05:10:36.358Z",
+  "workflow": "RPA_Macroentorno_Final",
+  "fuente": "bcw_wti",
+  "institucion": "bce",
+  "categoria": "sector_externo",
+  "periodicidad": "diaria",
+  "estado": "OK",
+  "intentos": 1,
+  "archivo_generado": "bce_wti_20260619.xlsx",
+  "ruta_archivo": "/home/node/datos_macroentorno/bce/sector_externo/bce_wti_20260619.xlsx",
+  "mensaje": "Archivo crudo descargado, validado y guardado correctamente"
+}

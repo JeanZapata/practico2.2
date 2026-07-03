@@ -1,0 +1,14 @@
+{
+  "fecha_hora": "2026-06-19T03:01:11.736Z",
+  "workflow": "RPA_Macroentorno_01_Supercias_Ranking",
+  "fuente": "supercias_ranking",
+  "institucion": "supercias",
+  "categoria": "ranking",
+  "periodicidad": "anual",
+  "estado": "ERROR",
+  "intentos": 1,
+  "archivo_generado": "supercias_ranking_20260619.html",
+  "ruta_archivo": "/home/node/datos_macroentorno/supercias/ranking/supercias_ranking_20260619.html",
+  "mensaje_error": "No se encontró binary.data en la respuesta",
+  "accion_tomada": "Se registra incidente y el flujo puede continuar con otras fuentes"
+}

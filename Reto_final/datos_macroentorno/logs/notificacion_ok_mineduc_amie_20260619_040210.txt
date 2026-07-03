@@ -1,0 +1,25 @@
+PIPELINE RPA MACROENTORNO ECUADOR
+Notificación de ejecución correcta
+
+Estado: OK
+Fecha y hora: 2026-06-19T04:02:10.892Z
+
+Fuente procesada: mineduc_amie
+Institución: mineduc
+Categoría: amie
+Periodicidad: undefined
+
+Archivo generado:
+mineduc_amie_20260619.csv
+
+Ruta del archivo crudo:
+/home/node/datos_macroentorno/mineduc/amie/mineduc_amie_20260619.csv
+
+Log de ejecución:
+/home/node/datos_macroentorno/logs/log_mineduc_amie_20260619_040210.json
+
+Mensaje:
+El archivo fue descargado, validado, almacenado y registrado correctamente.
+
+Equipo destino:
+Equipo de Datos

@@ -1,0 +1,13 @@
+{
+  "fecha_hora": "2026-06-19T04:33:44.052Z",
+  "workflow": "RPA_Macroentorno_01_Supercias_Ranking",
+  "fuente": "supercias_ranking",
+  "institucion": "supercias",
+  "categoria": "ranking",
+  "periodicidad": "anual",
+  "estado": "OK",
+  "intentos": 1,
+  "archivo_generado": "supercias_ranking_20260619.html",
+  "ruta_archivo": "/home/node/datos_macroentorno/supercias/ranking/supercias_ranking_20260619.html",
+  "mensaje": "Archivo crudo descargado, validado y guardado correctamente"
+}

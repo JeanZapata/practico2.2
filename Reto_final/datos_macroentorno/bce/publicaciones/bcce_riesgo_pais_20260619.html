@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Riesgo País</title> <!-- 🔍 REV: Titulo -->
+
+    <!-- Iconos Pestaña -->
+    <link href="https://contenido.bce.fin.ec/documentos/informacioneconomica/componentes/img/favicon.ico" rel="icon">
+    <link href="https://contenido.bce.fin.ec/documentos/informacioneconomica/componentes/img/favicon.ico" rel="apple-touch-icon">
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://contenido.bce.fin.ec/documentos/informacioneconomica/componentes/vendor/bootstrap/css/bootstrap.min.css">
+
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    <style>
+        #dataTable th,
+        #dataTable td {
+            width: 50%; /* 🔍 REV: En función del número de columas */            
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- SELECTORES -->
+        <div class="d-flex flex-wrap align-items-center justify-content-center mt-2">
+            <div class="me-4">
+                <label for="chartType" class="fw-bold">📊 Tipo de Gráfico:</label>
+                <select id="chartType" class="form-select d-inline-block" style="width: auto;">
+                    <option value="line">Línea</option>
+                    <option value="column">Columnas</option>
+                    <option value="bar">Barras</option>
+                    <option value="area">Área</option>
+                </select>
+            </div>
+            <div>
+                <label for="mesInicio" class="fw-bold">📅 Inicio:</label>
+                <select id="mesInicio" class="form-select d-inline-block" style="width: auto;"></select>
+                <select id="añoInicio" class="form-select d-inline-block" style="width: auto;"></select>
+
+                <label for="mesFin" class="fw-bold">📅 Fin:</label>
+                <select id="mesFin" class="form-select d-inline-block" style="width: auto;"></select>
+                <select id="añoFin" class="form-select d-inline-block" style="width: auto;"></select>
+            </div>
+        </div>
+
+        <!-- DEFINICIÓN --> <!-- 🔍 REV: Definición del indicador -->
+        <div class="text-start mt-2">
+            <p style="text-align: justify;">
+                <b>El riesgo país</b> es un concepto utilizado en finanzas y economía para describir la
+                probabilidad de que un país no cumpla con sus obligaciones financieras o
+                experimenta una crisis económica que afecte negativamente a sus inversores y
+                prestamistas. En otras palabras, es una medida del riesgo asociado a invertir o
+                prestar dinero a un país específico.
+            </p>
+        </div>
+
+        <!-- GRÁFICO -->
+        <div id="chart-container" class="border rounded mt-2"></div>
+
+        <!-- NOTA --> <!-- 🔍 REV: Nota del indicador, en caso de existir -->
+        <!-- <div class="container mt-2">
+            <p style="text-align: justify;">
+                
+            </p>
+        </div> -->
+
+        <!-- TABLA -->
+        <div class="container mt-2">
+            <h3 class="text-center">📋 Serie Histórica</h3>
+            <div class="table-responsive">
+                <table id="dataTable" class="table table-bordered">
+                    <thead class="table-secondary"></thead>
+                    <tbody class="table-light"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FUENTE --> <!-- 🔍 REV: Fuente o Elaboración -->
+        <div class="text-center mb-2">
+            <b>Elaborado:</b> Banco Central del Ecuador
+        </div>
+    </div>
+
+    <script>
+
+        let allData = [];
+
+        // Función para cargar la información desde un archivo JSON
+        function cargarDatosDesdeJSON(callback) {
+            // 🔍 REV: Parametros JSON del indicador
+            const archivo = 'datos_formulario.json';
+            const vista = 'view_ind_formulario';
+            const indicador = "Riesgo País";
+            const variable = "val_ind_0003";
+            const segmento = "Indicadores Económicos";
+
+            fetch(archivo)
+                .then(response => response.json())
+                .then(json => {
+                    const dataFiltrada = json[vista].filter(row =>
+                        row["Indicador"] === indicador &&
+                        row["Código Variable Dinámica"] === variable &&
+                        row["Segmento"] === segmento
+                    ).sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+
+                    allData = dataFiltrada;
+                    callback();
+                });
+        }
+
+        // Función para llenar mes-año inicio y mes-año fin en los selectores
+        function llenarSelectoresMesAño() {
+            const años = [...new Set(allData.map(d => d.Fecha.substring(0, 4)))];
+            const meses = [
+                { mes: "01", nombre: "Ene" },
+                { mes: "02", nombre: "Feb" },
+                { mes: "03", nombre: "Mar" },
+                { mes: "04", nombre: "Abr" },
+                { mes: "05", nombre: "May" },
+                { mes: "06", nombre: "Jun" },
+                { mes: "07", nombre: "Jul" },
+                { mes: "08", nombre: "Ago" },
+                { mes: "09", nombre: "Sep" },
+                { mes: "10", nombre: "Oct" },
+                { mes: "11", nombre: "Nov" },
+                { mes: "12", nombre: "Dic" }
+            ];
+
+            const selMesInicio = document.getElementById("mesInicio");
+            const selMesFin = document.getElementById("mesFin");
+            const selAñoInicio = document.getElementById("añoInicio");
+            const selAñoFin = document.getElementById("añoFin");
+
+            meses.forEach(m => {
+                selMesInicio.innerHTML += `<option value="${m.mes}">${m.nombre}</option>`;
+                selMesFin.innerHTML += `<option value="${m.mes}">${m.nombre}</option>`;
+            });
+
+            años.forEach(a => {
+                selAñoInicio.innerHTML += `<option value="${a}">${a}</option>`;
+                selAñoFin.innerHTML += `<option value="${a}">${a}</option>`;
+            });
+        }
+
+        // Función para filtrar los datos en dependencia de los selectores
+        function filtrarDatosMesAño(añoInicio, añoFin, mesInicio, mesFin) {
+            if (parseInt(añoInicio) > parseInt(añoFin)) {
+                alert("El año de inicio no puede ser mayor que el año de fin.");
+                return { fechas: [], valores: [], registros: [] };
+            }
+
+            if (parseInt(añoInicio) === parseInt(añoFin) && parseInt(mesInicio) > parseInt(mesFin)) {
+                alert("El mes de inicio no puede ser mayor que el mes de fin dentro del mismo año.");
+                return { fechas: [], valores: [], registros: [] };
+            }
+
+            const data = allData.filter(row => {
+                const año = row.Fecha.substring(0, 4);
+                const mes = row.Fecha.substring(5, 7);
+                return (
+                    (año > añoInicio || (año === añoInicio && mes >= mesInicio)) &&
+                    (año < añoFin || (año === añoFin && mes <= mesFin))
+                );
+            });
+
+            return {
+                fechas: data.map(r => new Date(r.Fecha + "-01").getTime()),
+                valores: data.map(r => {
+                    let val = r.Valor;
+                    if (typeof val === 'string') val = val.replace(',', '.');
+                    return parseFloat(val);
+                }),
+                registros: data
+            };
+        }
+
+        // Función para actualizar datos en base a los filtros seleccionados
+        function actualizarDatosMesAño() {
+            const añoInicio = document.getElementById("añoInicio").value;
+            const añoFin = document.getElementById("añoFin").value;
+            const mesInicio = document.getElementById("mesInicio").value;
+            const mesFin = document.getElementById("mesFin").value;
+            const datos = filtrarDatosMesAño(añoInicio, añoFin, mesInicio, mesFin);
+
+
+            if (datos.registros.length === 0) {
+                console.warn("⚠️ No hay datos para mostrar");
+                return;
+            }
+
+            actualizarTablaMesAño(datos.registros);
+            actualizarGraficoMesAño(datos.registros);
+        }
+
+        // Función para actualizar gráfico con los registros filtrados (incluye datos iniciales)
+        function actualizarGraficoMesAño(registros) {
+
+            if (!registros || registros.length === 0) {
+                console.warn("⚠️ No hay datos para graficar.");
+                return;
+            }
+
+            const tipo = document.getElementById("chartType").value;
+            const titulo = (registros[0]?.Indicador || 'Indicador').toUpperCase();
+            const subtitulo = registros[0]?.Medida ? `Expresado en ${registros[0]?.Medida}` : 'Medida';
+            const serieName = `${registros[0]?.Indicador} en ${registros[0]?.Medida}`;
+            
+            const fechaCarga = registros[0]?.Carga || 'Fecha no disponible';
+
+            let fechaCargaFormato = 'Fecha no disponible';
+
+            if (fechaCarga && /^\d{4}-\d{2}-\d{2}$/.test(fechaCarga)) {
+                const [anio, mes, dia] = fechaCarga.split('-');
+                fechaCargaFormato = `${dia}/${mes}/${anio}`;
+            }
+
+            Highcharts.chart('chart-container', {
+                title: {
+                    text: titulo
+                },
+                subtitle: {
+                    text: 'ℹ️ ' + subtitulo
+                },
+                xAxis: {
+                    title: {
+                        text: 'Período',
+                        style: {
+                            display: 'none'
+                        },
+                    },
+                    type: 'datetime',
+                    tickInterval: 24 * 3600 * 1000, // 🔍 REV: Intervalos en función del período
+                    labels: {
+                        formatter: function () {
+                            const fecha = new Date(this.value);
+                            const dia = String(fecha.getUTCDate()).padStart(2, '0');
+                            const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+                            const anio = fecha.getUTCFullYear();
+
+                            return `${dia}/${mes}/${anio}`;
+                        },
+                        style: { color: '#808080' }
+                    }
+                },
+                yAxis: {
+                    // tickInterval: 500, // 🔍 REV: Definir de ser el caso la separación entre líneas
+                    title: {
+                        text: null
+                    },
+                    labels: {
+                        formatter: function () {
+                            return this.value.toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                        },                        
+                        style: { color: '#808080' }
+                    },
+                    gridLineColor: '#DCE0E5'
+                },
+                series: [{
+                    name: serieName || 'Serie sin nombre',
+                    data: registros
+                        .filter(d => d.Valor) // Solo verificar que exista un valor
+                        .map(d => {
+                            let valor = d.Valor.replace(/\./g, '').replace(',', '.'); // Normalizar
+                            const numero = parseFloat(valor); // Convertir a número real
+                            return [
+                                Date.parse(d.Fecha),
+                                numero
+                            ];
+                        }),
+                    color: '#007BFF'
+                }],
+                tooltip: {
+                    borderRadius: 6,
+                    formatter: function () {
+                        const valor = this.y.toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        });
+
+                        const fecha = new Date(this.x);
+                        const dia = String(fecha.getUTCDate()).padStart(2, '0');
+                        const mes = String(fecha.getUTCMonth() + 1).padStart(2, '0');
+                        const anio = fecha.getUTCFullYear();
+                        const periodo = `${dia}/${mes}/${anio}`;
+
+                        return `<b>📅 ${periodo}</b><br>📈 <b>${valor}</b>`;
+                    }
+                },
+                caption: {
+                    text: `🕒 Fecha de carga: ${fechaCargaFormato}`,
+                    align: 'center'
+                },
+                credits: {
+                    enabled: true,
+                    text: 'Banco Central de Ecuador',
+                    href: 'https://www.bce.fin.ec/estadisticas-economicas/'
+                },
+                legend: {
+                    enabled: false
+                },chart: {
+                    type: tipo,
+                    marginTop: 100,
+                    events: {
+                        load: function () {
+                            const chart = this;
+                            //console.log('Ancho chart.chartWidth:', chart.chartWidth);
+
+                            chart.customLogo = null;
+                            chart.updateLogo = function () {
+                                const ancho = chart.chartWidth;
+
+                                if (chart.customLogo) {
+                                    chart.customLogo.destroy();
+                                    chart.customLogo = null;
+                                }
+
+                                // 🔍 REV: En función del título y subtítulo del gráfico
+
+                                if (ancho < 350) {
+                                    return;
+                                }
+
+                                let width, height, xPos, yPos;
+
+                                if (ancho >= 350 && ancho < 500) {
+                                    width = 50;
+                                    height = 50;
+                                    xPos = 10;
+                                    yPos = 10;
+                                } else if (ancho >= 500 && ancho < 768) {
+                                    width = 70;
+                                    height = 70;
+                                    xPos = 5;
+                                    yPos = 5;
+                                } else {
+                                    width = 90;
+                                    height = 90;
+                                    xPos = 0;
+                                    yPos = 0;
+                                }
+
+                                chart.customLogo = chart.renderer.image(
+                                    'https://contenido.bce.fin.ec/documentos/informacioneconomica/indicadores/componentes/logoBCE.png',
+                                    xPos, yPos,
+                                    width, height
+                                ).add();
+                            };
+
+                            chart.updateLogo();
+                        },
+                        redraw: function () {
+                            const chart = this;
+                            //console.log('Ancho chart.chartWidth (redraw):', chart.chartWidth);
+                            if (chart.updateLogo) {
+                                chart.updateLogo();
+                            }
+                        }
+                    }
+                },
+                exporting: {
+                    buttons: {
+                        contextButton: {
+                            menuItems: [
+                                { text: '🖥️ Ver en pantalla completa', onclick: function () { this.fullscreen.toggle(); } },
+                                { separator: true },
+                                { text: '📊 Descargar CSV', onclick: function () { this.downloadCSV(); } },
+                                { text: '📈 Descargar Excel', onclick: function () { this.downloadXLS(); } },
+                                { separator: true },
+                                { text: '🖨️ Imprimir', onclick: function () { this.print(); } },
+                                { text: '📄 Descargar PDF', onclick: function () { this.exportChart({ type: 'application/pdf' }); } },
+                                { text: '📷 Descargar PNG', onclick: function () { this.exportChart({ type: 'image/png' }); } },
+                                { text: '🖼️ Descargar JPEG', onclick: function () { this.exportChart({ type: 'image/jpeg' }); } },
+                                { text: '🧬 Descargar SVG', onclick: function () { this.exportChart({ type: 'image/svg+xml' }); } }
+                            ]
+                        }
+                    }
+                }                                
+            });
+        }
+
+        // Función para actualizar tabla con los registros filtrados (incluye datos iniciales)
+        function actualizarTablaMesAño(registros) {
+            registros.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+
+            const titulo = registros[0]?.Indicador || 'Indicador';
+            const subtitulo = registros[0]?.Medida?.replace(/^.*?en\s/i, '') || '';
+            const encabezadoValor = `${titulo} <br>${subtitulo}`;
+
+            document.querySelector("#dataTable thead").innerHTML = `
+                <tr>
+                    <th>Fecha</th>
+                    <th>${encabezadoValor}</th>
+                </tr>
+            `;
+
+            const tbody = document.querySelector("#dataTable tbody");
+            tbody.innerHTML = "";
+
+
+            registros.forEach(row => {
+                const tr = document.createElement("tr");
+                
+                let valor = row.Valor;
+                valor = valor.replace(/\./g, '').replace(',', '.');        
+                const valorFormateado = parseFloat(valor).toLocaleString(undefined, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+
+                const fecha = new Date(row.Fecha);
+                const fechaFormateada = new Intl.DateTimeFormat('es-EC', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    timeZone: 'UTC'
+                }).format(fecha);
+                
+                tr.innerHTML = `<td>${fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1)}</td><td>${valorFormateado}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Función para adptar tamaño de iframe en html principal
+        function notificarAltura() {
+            if (window.parent) {
+                setTimeout(() => {
+                    const altura = document.body.scrollHeight;
+
+                    const iframeAltura = window.parent.document.documentElement.scrollHeight; // Altura del iframe (si está disponible)
+                    //console.log("📏 Altura del contenido de la página:", altura);  // Muestra la altura del contenido
+                    //console.log("📏 Altura del iframe (si es accesible):", iframeAltura);  // Muestra la altura del iframe (si está disponible)
+
+                    window.parent.postMessage({ tipo: 'ajustarAltura', altura }, '*');
+                }, 200);
+            }
+        }
+
+        // Callback a la función cargar datos desde JSON
+        document.addEventListener("DOMContentLoaded", () => {
+            cargarDatosDesdeJSON(() => {
+                llenarSelectoresMesAño();
+
+                const años = [...new Set(allData.map(d => d.Fecha.substring(0, 4)))].sort();
+
+                // const añoInicio = años[0];   // Definir automáticamente año Inicio
+                const añoInicio = "2025";       // Definir manualmente año Inicio
+                const añoFin = años[años.length - 1];
+                
+                const meses = [...new Set(allData.map(d => d.Fecha.substring(5, 7)))].sort();
+
+                //const mesInicio = meses[0];   // Definir manualmente mes Inicio
+                const mesInicio = "01";         // Definir manualmente mes Inicio
+                const mesFin = meses[meses.length - 1];
+                
+                document.getElementById("añoInicio").value = añoInicio;
+                document.getElementById("añoFin").value = añoFin;
+                document.getElementById("mesInicio").value = mesInicio;
+                document.getElementById("mesFin").value = mesFin;
+
+                document.getElementById("añoInicio").addEventListener("change", actualizarDatosMesAño);
+                document.getElementById("añoFin").addEventListener("change", actualizarDatosMesAño);
+                document.getElementById("mesInicio").addEventListener("change", actualizarDatosMesAño);
+                document.getElementById("mesFin").addEventListener("change", actualizarDatosMesAño);
+
+                document.getElementById("chartType").addEventListener("change", actualizarDatosMesAño);
+
+                actualizarDatosMesAño();
+            });
+        });
+
+    </script>
+</body>
+
+</html>

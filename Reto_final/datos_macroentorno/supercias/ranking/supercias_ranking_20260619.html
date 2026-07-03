@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+<style>
+* {box-sizing: border-box}
+
+/* Set height of body and the document to 100% */
+body, html {
+  height: 100%;
+  margin: 0;
+  font-family: Arial;
+}
+
+/* Style tab links */
+.tablink {
+  background-color: #555;
+  color: white;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-size: 17px;
+  width: 25%;
+}
+
+.tablink:hover {
+  background-color: #777;
+}
+
+/* Style the tab content (and add height:100% for full page content) */
+.tabcontent {
+  display: none;
+  padding: 80px 20px 10px;
+  height: 100%;
+  -webkit-animation: fadeEffect 1s;
+  animation: fadeEffect 1s;
+}
+/* Fade in tabs */
+@-webkit-keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
+@keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+.accordion {
+  background-color: #eee;
+  color: #444;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+  transition: 0.4s;
+}
+
+.active, .accordion:hover {
+  background-color: #ccc;
+}
+
+.accordion:after {
+  content: '\002B';
+  color: #777;
+  font-weight: bold;
+  float: right;
+  margin-left: 5px;
+}
+
+.active:after {
+  content: "\2212";
+}
+
+.panel {
+  padding: 0 18px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+  line-height: 22px;
+  color: rgba(0, 0, 0, 0.7);
+  word-break: break-word;
+}
+.panel code{
+    overflow-x: auto;
+    background: rgb(248, 248, 248);
+    border: 1px solid rgb(236, 236, 237);
+    border-radius: 4px;
+}
+ol, ul {
+    list-style: none;
+}
+.panel ul {
+    list-style-type: disc;
+    padding-left: 16px;
+
+}
+
+.descarga a{
+    display: flex;
+    flex: 0 0 auto;
+    -webkit-box-align: center;
+    align-items: center;
+    text-decoration: none;
+}
+.descarga a h2 {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 24px;
+    color: rgb(32, 33, 36);
+}
+.descarga .icon {
+    color: rgba(0, 0, 0, 0.7);
+    font-size: 24px;
+    user-select: none;
+}
+
+@font-face {
+  font-family: 'Google Material Icons';
+  font-style: normal;
+  font-weight: 400;
+  src: url(https://fonts.gstatic.com/s/googlematerialicons/v130/Gw6kwdfw6UnXLJCcmafZyFRXb3BL9rvi0QZG3Sy7X00.woff2) format('woff2');
+}
+.google-material-icons {
+    font-family: 'Google Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
+
+
+</style>
+</head>
+<body>
+
+<button class="tablink" onclick="openPage('Ranking', this, '#0f427a')" id="defaultOpen">Ranking</button>
+
+<button class="tablink" onclick="openPage('Recursos', this, '#0f427a')">Recursos</button>
+
+<div id="Ranking" class="tabcontent">
+
+<iframe title="Ranking Compañías" width="100%" height="100%" src="https://app.powerbi.com/view?r=eyJrIjoiMDM0NTQzMzUtNjlkYy00MDFhLWI3YzQtYTk5MmYyNDNkYTEwIiwidCI6IjUzYzcyYjU5LWVmNjItNDBlYS1hYjg2LTdlMjcyOTc5MWIwMSJ9&embedImagePlaceholder=true" frameborder="0" allowFullScreen="true"></iframe>
+</div>
+
+
+
+<div id="Recursos" class="tabcontent">
+<div style="width:70%;height:100%;margin: 0 auto;">
+  <h3>Descripción de datos</h3>
+  <p>
+    En este apartado se encuentra la descripción de los archivos .csv que serán compartidos y disponibles para la descarga a todos los usuarios que deseen crear reportes personalizados con la información de la SCVS, está información se actualizará cada 24 horas.
+  </p>
+  <button class="accordion">bi_compania.csv</button>
+  <div class="panel">
+
+    <div class="descarga">
+      <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/bi_compania.csv" download > <h2 class="mfLGh">Descarga</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a>
+    </div>
+
+    <ul>
+    <li><code>expediente</code> - Número identificador de la compañía otorgado por la SCVS.</li>
+    <li><code>ruc</code> - Número identificador de la compañía otorgado por la SRI.</li>
+    <li><code>nombre</code> - Nombre de la compañía.</li>
+    <li><code>tipo</code> - Tipo de compañía.</li>
+    <li><code>pro_codigo</code> - Código de la provinvia.</li>
+    <li><code>provincia</code> - Provinvia donde está domiciliada la compañía.</li>
+    </ul>
+  </div>
+
+  <button class="accordion">bi_segmento.csv</button>
+  <div class="panel">
+    <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/bi_segmento.csv" download > <h2 class="mfLGh">Descarga</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a>
+    </div>
+    <ul>
+    <li><code>id_segmento</code> - Número identificador del segmento al que pertenece una compañía.</li>
+    <li><code>segmento</code> - Descripción del segmento al que pertenece una compañía.</li>
+    </ul>
+  </div>
+
+  <button class="accordion">bi_ciiu.csv</button>
+  <div class="panel">
+    <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/bi_ciiu.csv" download > <h2 class="mfLGh">Descarga</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a>
+    </div>
+    <ul>
+    <li><code>ciiu</code> - Código de Clasificacón Industrial Internacional Unifrome de la actividad económica (todos los niveles).</li>
+    <li><code>descripcion</code> - Descripción del código ciiu.</li>
+    </ul>
+  </div>
+
+  <button class="accordion">bi_ranking.csv</button>
+  <div class="panel">
+    <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/bi_ranking.csv" download > <h2 class="mfLGh">Descarga</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a>
+    </div>
+    <ul>
+    <li><code>anio</code>- Año fiscal en que se presenta el estado financiero.</li>
+<li><code>expediente</code>- Número identificador de la compañía otorgado por la SCVS.</li>
+<li><code>posicion_general</code>- Número de la posición de la compañía.</li>
+<li><code>cia_imvalores</code>- Marca si la compañía pertenece al sector de mercado de valores: 1 (Sí); 0 (No).</li>
+<li><code>id_estado_financiero</code>- Número identificador del esatdo financiero.</li>
+<li><code>ingresos_ventas</code>- Sumatoria de los ingresos por ventas de acuerdo a lo registrado en el estado financiero.</li>
+<li><code>activos</code>- Sumatoria de los activos de acuerdo a lo registrado en el estado financiero.</li>
+<li><code>patrimonio</code>- Sumatoria del patrimonio de acuerdo a lo registrado en el estado financiero.</li>
+<li><code>utilidad_an_imp</code>- Utilidad antes del impuesto es la cifra resultante después de deducir del total de ingresos, todos los costos y gastos diferentes al pago de impuestos, , que se ha registrado en el estado financiero.</li>
+<li><code>impuesto_renta</code>- Impuesto a la renta, es el valor que se aplica sobre las ganancias que obtienen en el año fiscal registrado en el estado financiero.</li>
+<li><code>n_empleados</code>- Número de empleados que se ha registrado en el estado financiero.</li>
+<li><code>ingresos_totales</code>- Sumatoria de los ingresos recibidos en el año fiscal que se ha registrado en el estado financiero.</li>
+<li><code>utilidad_ejercicio</code>- Utilidad del ejercicio es la ganancia que se obtuvo a través de las ventas de productos o servicios luego de descontar los costos de producción del año fiscal que se ha registrado en el estado financiero.</li>
+<li><code>utilidad_neta</code>- Utilidad neta es la ganancia que se obtuvo a través de sus ventas pero descontando no solo los gastos de producción, sino también de distribución, logística, gastos operativos, impuestos y obligaciones, del año fiscal que se ha registrado en el estado financiero.</li>
+<li><code>cod_segmento</code>- Número identificador del tipo de segmento al que pertenece la compañía.</li>
+<li><code>ciiu_n1</code>- Código de Clasificacón Industrial Internacional Unifrome a nivel 1 de la actividad económica a la que pertence una compañía.</li>
+<li><code>ciiu_n6</code>-  Código de Clasificacón Industrial Internacional Unifrome a nivel 6 de la actividad económica a la que pertence una compañía.</li>
+<li><code>liquidez_corriente</code>- Indicador de liquidez corriente, calculado con los valores registrados en el estado financiero</li>
+<li><code>prueba_acida</code>- Indicador de prueba ácida, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_activo</code>- Indicador de endeudamiento del activo, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_patrimonial</code>- Indicador de endeudamiento patrimonial, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_activo_fijo</code>- Indicador de endeudamiento del activo fijo, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_corto_plazo</code>- Indicador de endeudamiento a corto plazo, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_largo_plazo</code>- Indicador de endeudamiento a largo plazo, calculado con los valores registrados en el estado financiero</li>
+<li><code>cobertura_interes</code>- Indicador de cobertura de interés, calculado con los valores registrados en el estado financiero</li>
+<li><code>apalancamiento</code>- Indicador de apalancamiento, calculado con los valores registrados en el estado financiero</li>
+<li><code>apalancamiento_financiero</code>- Indicador de apalancamiento financiero, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_patrimonial_ct</code>- Indicador de endeudamiento patrimonial corriente, calculado con los valores registrados en el estado financiero</li>
+<li><code>end_patrimonial_nct</code>- Indicador de endeudamiento patrimonial no corriente, calculado con los valores registrados en el estado financiero</li>
+<li><code>apalancamiento_c_l_plazo</code>- Indicador de apalancamiento a corto y largo plazo, calculado con los valores registrados en el estado financiero</li>
+<li><code>rot_cartera</code>- Indicador de rotación de cartera, calculado con los valores registrados en el estado financiero</li>
+<li><code>rot_activo_fijo</code>- Indicador de rotación de activo fijo, calculado con los valores registrados en el estado financiero</li>
+<li><code>rot_ventas</code>- Indicador de rotación de ventas, calculado con los valores registrados en el estado financiero</li>
+<li><code>per_med_cobranza</code>- Indicador de período medio de cobranza, calculado con los valores registrados en el estado financiero</li>
+<li><code>per_med_pago</code>- Indicador de período medio de pago, calculado con los valores registrados en el estado financiero</li>
+<li><code>impac_gasto_a_v</code>- Indicador de impacto gasto, administración y ventas, calculado con los valores registrados en el estado financiero</li>
+<li><code>impac_carga_finan</code>- Indicador de impacto de la carga financiera, calculado con los valores registrados en el estado financiero</li>
+<li><code>margen_bruto</code>- Indicador demargen bruto, calculado con los valores registrados en el estado financiero</li>
+<li><code>margen_operacional</code>- Indicador de margen operacional, calculado con los valores registrados en el estado financiero</li>
+<li><code>rent_neta_ventas</code>- Indicador de rentabilidad neta de ventas, calculado con los valores registrados en el estado financiero</li>
+<li><code>rent_ope_patrimonio</code>- Indicador de rentabilidad operacional del patrimonio, calculado con los valores registrados en el estado financiero</li>
+<li><code>rent_ope_activo</code>- Indicador de rentabilidad operacional del activo, calculado con los valores registrados en el estado financiero</li>
+<li><code>roe</code>- Indicador de rentabilidad financiera, calculado con los valores registrados en el estado financiero</li>
+<li><code>roa</code>- Indicador de rendimiento de los activos, calculado con los valores registrados en el estado financiero</li>
+<li><code>fortaleza_patrimonial</code>- Indicador de fortaleza patromonial, calculado con los valores registrados en el estado financiero</li>
+<li><code>gastos_financieros</code>- Sumatoria de los gastos financieros, calculado con los valores registrados en el estado financiero</li>
+<li><code>gastos_admin_ventas</code>- Sumatoria de los gastos administrativos y ventas, calculado con los valores registrados en el estado financiero</li>
+<li><code>depreciaciones</code>- Sumatoria de los gastos por depreciaciones, calculado con los valores registrados en el estado financiero</li>
+<li><code>amortizaciones</code>- Sumatoria de los gastos por amortizaciones, calculado con los valores registrados en el estado financiero</li>
+<li><code>costos_ventas_prod</code>- Sumatoria de los costos por ventas y producción, calculado con los valores registrados en el estado financiero</li>
+<li><code>deuda_total</code>- Deuda total es la sumatoria de las obligaciones financieras, calculado con los valores registrados en el estado financiero</li>
+<li><code>deuda_total_c_plazo</code>- Deuda total a corto plazo es la sumatoria de las obligaciones financieros corrientes, calculado con los valores registrados en el estado financiero</li>
+<li><code>total_gastos</code>- Total gastos es la sumatoria de los gastos, calculado con los valores registrados en el estado financiero</li>
+    </ul>
+    </div>
+
+   <h3>Concepto y fórmula de los indicadores</h3>
+  <p>
+   Se ha preparado un documento explicativo del significado y fórmula para la obtención de indicadores económicos.
+  </p>
+  <button class="accordion"> referencia_indicadores.pdf</button>
+  <div class="panel">
+    <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/referencia_indicadores.pdf" download > <h2 class="mfLGh">Descarga</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a>
+     </div>
+
+     <div class="descarga">
+          <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/indicadores_sector.csv" download > <h2 class="mfLGh">Descarga Indicadores por Actividad Económica</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+    </div>
+
+
+  <h3>Archivos resumen ranking</h3>
+  <p>
+   Los siguientes archivos son generados tomando en cuenta la información de los Estados Financieros presentados bajo el estado de compañías activas.
+  </p>
+  <button class="accordion"> Archivos</button>
+  <div class="panel">
+	<div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2025.xlsx" download > <h2 class="mfLGh">Descarga ranking 2025</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+	<div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2024.xlsx" download > <h2 class="mfLGh">Descarga ranking 2024</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+	<div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2023.xlsx" download > <h2 class="mfLGh">Descarga ranking 2023</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+    <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2022.xlsx" download > <h2 class="mfLGh">Descarga ranking 2022</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2021.xlsx" download > <h2 class="mfLGh">Descarga ranking 2021</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2020.xlsx" download > <h2 class="mfLGh">Descarga ranking 2020</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2019.xlsx" download > <h2 class="mfLGh">Descarga ranking 2019</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2018.xlsx" download > <h2 class="mfLGh">Descarga ranking 2018</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2017.xlsx" download > <h2 class="mfLGh">Descarga ranking 2017</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2016.xlsx" download > <h2 class="mfLGh">Descarga ranking 2016</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2015.xlsx" download > <h2 class="mfLGh">Descarga ranking 2015</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2014.xlsx" download > <h2 class="mfLGh">Descarga ranking 2014</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2013.xlsx" download > <h2 class="mfLGh">Descarga ranking 2013</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2012.xlsx" download > <h2 class="mfLGh">Descarga ranking 2012</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2011.xlsx" download > <h2 class="mfLGh">Descarga ranking 2011</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+     <div class="descarga">
+       <a href="https://appscvsmovil.supercias.gob.ec/ranking/recursos/archivos/ranking_2010.xlsx" download > <h2 class="mfLGh">Descarga ranking 2010</h2><i class="rmwc-icon rmwc-icon--ligature google-material-icons icon" color="rgba(0,0,0,0.7)" sizevalue="24px" role="button" tabindex="0">get_app</i></a> </div>
+    </div>
+
+
+
+  <h3>Referencia y cita</h3>
+  <p>
+   Por favor, use este identificador para citar o enlazar este ítem: <span style="color:#0f427a;">https://appscvsmovil.supercias.gob.ec/ranking/reporte.html</span>
+  </p>
+
+  <button class="accordion"> Ejemplo:</button>
+  <div class="panel">
+  <h3>Referencia</h3>
+  <p>
+  (Supeintendencia de Compañías, Valores y Seguros, 2023)
+  </p>
+  <h3>Bibliografía</h3>
+  <p>Supeintendencia de Compañías, Valores y Seguros. (16 de 02 de 2023). Ranking de Compañías. Obtenido de Supeintendencia de Compañías, Valores y Seguros: https://appscvsmovil.supercias.gob.ec/ranking/reporte.html
+  </p>
+  </div>
+
+
+  </div>
+
+
+  </div>
+</div>
+
+
+<script>
+function openPage(pageName,elmnt,color) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablink");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].style.backgroundColor = "";
+  }
+  document.getElementById(pageName).style.display = "block";
+  elmnt.style.backgroundColor = color;
+}
+
+// Get the element with id="defaultOpen" and click on it
+document.getElementById("defaultOpen").click();
+//hasta aqui tabs
+//inicia acordeon
+var acc = document.getElementsByClassName("accordion");
+var i;
+
+for (i = 0; i < acc.length; i++) {
+  acc[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var panel = this.nextElementSibling;
+    if (panel.style.maxHeight) {
+      panel.style.maxHeight = null;
+    } else {
+      panel.style.maxHeight = panel.scrollHeight + "px";
+    }
+  });
+}
+</script>
+
+</body>
+</html>

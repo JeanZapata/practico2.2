@@ -1,0 +1,25 @@
+PIPELINE RPA MACROENTORNO ECUADOR
+Notificación de ejecución correcta
+
+Estado: OK
+Fecha y hora: 2026-06-19T05:10:36.015Z
+
+Fuente procesada: bce_riesgo_pais
+Institución: bce
+Categoría: publicaciones
+Periodicidad: undefined
+
+Archivo generado:
+bcce_riesgo_pais_20260619.html
+
+Ruta del archivo crudo:
+/home/node/datos_macroentorno/bce/publicaciones/bcce_riesgo_pais_20260619.html
+
+Log de ejecución:
+/home/node/datos_macroentorno/logs/log_bce_riesgo_pais_20260619_051035.json
+
+Mensaje:
+El archivo fue descargado, validado, almacenado y registrado correctamente.
+
+Equipo destino:
+Equipo de Datos

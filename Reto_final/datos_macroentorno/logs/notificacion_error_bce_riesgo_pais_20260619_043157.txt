@@ -1,0 +1,28 @@
+PIPELINE RPA MACROENTORNO ECUADOR
+Notificación de fallo parcial
+
+Estado: ERROR
+Fecha y hora: 2026-06-19T04:31:57.830Z
+
+Fuente procesada: bce_riesgo_pais
+Institución: bce
+Categoría: publicaciones
+Periodicidad: diaria
+
+Archivo esperado:
+bcce_riesgo_pais_20260619.html
+
+Ruta esperada:
+undefined/bcce_riesgo_pais_20260619.html
+
+Log de error:
+/home/node/datos_macroentorno/logs/error_bce_riesgo_pais_20260619_043157.json
+
+Mensaje de error:
+No se encontró binary.data en la respuesta
+
+Acción tomada:
+Se registró el incidente en logs. El pipeline puede continuar con otras fuentes sin detener toda la ejecución.
+
+Equipo destino:
+Equipo de Datos

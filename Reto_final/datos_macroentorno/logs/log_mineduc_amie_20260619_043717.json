@@ -1,0 +1,12 @@
+{
+  "fecha_hora": "2026-06-19T04:37:17.571Z",
+  "workflow": "RPA_Macroentorno_Final",
+  "fuente": "mineduc_amie",
+  "institucion": "mineduc",
+  "categoria": "amie",
+  "estado": "OK",
+  "intentos": 1,
+  "archivo_generado": "mineduc_amie_20260619.csv",
+  "ruta_archivo": "/home/node/datos_macroentorno/mineduc/amie/mineduc_amie_20260619.csv",
+  "mensaje": "Archivo crudo descargado, validado y guardado correctamente"
+}

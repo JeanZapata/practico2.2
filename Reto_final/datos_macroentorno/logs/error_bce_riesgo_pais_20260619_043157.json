@@ -1,0 +1,14 @@
+{
+  "fecha_hora": "2026-06-19T04:31:57.754Z",
+  "workflow": "RPA_Macroentorno_Final",
+  "fuente": "bce_riesgo_pais",
+  "institucion": "bce",
+  "categoria": "publicaciones",
+  "periodicidad": "diaria",
+  "estado": "ERROR",
+  "intentos": 1,
+  "archivo_generado": "bcce_riesgo_pais_20260619.html",
+  "ruta_archivo": "undefined/bcce_riesgo_pais_20260619.html",
+  "mensaje_error": "No se encontró binary.data en la respuesta",
+  "accion_tomada": "Se registra incidente y el flujo puede continuar con otras fuentes"
+}
