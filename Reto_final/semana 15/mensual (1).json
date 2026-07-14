@@ -1,0 +1,603 @@
+{
+  "name": "mensual",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "triggerAtHour": 8,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -656,
+        720
+      ],
+      "id": "4ff5c5a3-e07b-49c2-b816-8192f4e4d013",
+      "name": "Schedule_Mensual"
+    },
+    {
+      "parameters": {
+        "url": "https://contenido.bce.fin.ec/documentos/PublicacionesNotas/Catalogo/Encuestas/EOE/IEE_Nueva_Metodologia.xlsx",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -320,
+        400
+      ],
+      "id": "1c60dca1-faaa-471a-bb91-da5a1d5655c0",
+      "name": "HTTP_BCE_IEE",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        416
+      ],
+      "id": "a6f5e6eb-d587-4b55-917b-939e0270b397",
+      "name": "Extraer_Excel_BCE_IEE"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawItems = $input.all();\nconst listaConsolidada = [];\n\nfor (const item of rawItems) {\n  const data = item.json;\n  \n  // 1. FILTRO DE CABECERA: Ignoramos la fila de texto donde dice \"Fecha\"\n  if (data.__EMPTY === 'Fecha' || !data.__EMPTY) {\n    continue;\n  }\n  \n  // 2. FILTRO DE PIE DE PÁGINA: Las fechas reales del BCE vienen como \"YYYY-MM-DD\" (ej: 2010-02-01)\n  // Si la celda no tiene un guion, significa que es una nota aclaratoria del final del Excel\n  if (!data.__EMPTY.includes('-')) {\n    continue;\n  }\n\n  // 3. PARSEO SEGURO: Convertimos los strings de los índices a números reales\n  const ieeGlobal = parseFloat(data.__EMPTY_1);\n  const comercio = parseFloat(data.__EMPTY_2);\n  const construccion = parseFloat(data.__EMPTY_3);\n  const manufactura = parseFloat(data.__EMPTY_4);\n  const servicios = parseFloat(data.__EMPTY_5);\n  \n  // Guardamos la fecha fiscal limpia en una constante\n  const fechaFiscalLimpia = data.__EMPTY.trim();\n\n  // 4. MAPEO HOMOGÉNEO: Estructuramos con el mismo estándar de la base de datos\n  listaConsolidada.push({\n    json: {\n      INDICADOR: \"EXPECTATIVAS_EMPRESARIALES\",\n      FECHA_FISCAL: fechaFiscalLimpia,   // ◄--- NUEVA: Expuesta a nivel raíz para evitar duplicados\n      FECHA_EXTRACCION: new Date(),     // Objeto Date nativo de JS para evitar error NJS-011\n      ESTADO: \"COMPLETO\",\n      NECESITA_RESPALDO: 0,             // Corregido: entero estático (0 = No necesita respaldo)\n      DETALLE_ERROR: \"\",\n      // Todo el vector sectorial empaquetado en el documento JSON nativo\n      DATOS_JSON: JSON.stringify({\n        fecha_fiscal: fechaFiscalLimpia,\n        iee_global: isNaN(ieeGlobal) ? null : ieeGlobal,\n        comercio: isNaN(comercio) ? null : comercio,\n        construccion: isNaN(construccion) ? null : construccion,\n        manufactura: isNaN(manufactura) ? null : manufactura,\n        servicios: isNaN(servicios) ? null : servicios,\n        fuente: \"Banco Central del Ecuador\",\n        ruta_logica: \"BCE/SECTOR_REAL/EXPECTATIVAS_EMPRESARIALES\" // Estructura de carpetas virtuales\n      })\n    }\n  });\n}\n\nreturn listaConsolidada;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        400
+      ],
+      "id": "32e87dbe-1ffb-4102-b895-10eedba33b80",
+      "name": "Code_Transformar_BCE_IEE"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ \"/home/node/datos_macroentorno/supercias/directorio/supercias_directorio_\" + $now.toFormat(\"yyyyMMdd_HHmmss\") + \".csv\" }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        1056
+      ],
+      "id": "78611993-b343-4ec9-a282-01a0b70f064b",
+      "name": "Guardar_Archivo_Supercias_Directorio"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        496
+      ],
+      "id": "603c0017-21bb-42bb-9990-0983e0631b03",
+      "name": "Manual_Trigger_Pruebas"
+    },
+    {
+      "parameters": {
+        "url": "https://mercadodevalores.supercias.gob.ec/reportes/excel/directorio_companias.xlsx",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -272,
+        832
+      ],
+      "id": "c35a4789-3b41-41db-9017-2c9370818a8e",
+      "name": "HTTP_Supercias_Directorio",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        848
+      ],
+      "id": "c3d65e6b-6ede-4266-b10f-0989027e7562",
+      "name": "Extraer_Excel_Supercias_Directorio"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawItems = $input.all();\nconst listaConsolidada = [];\n\n// Expresión regular para cazar la fecha de actualización (ej: 04/06/2026)\nconst regexFechaActualizacion = /(\\d{2})\\/(\\d{2})\\/(\\d{4})/;\nlet periodoFiscalDetectado = \"\";\n\n// =========================================================================\n// FASE 1: DETECCIÓN DINÁMICA DEL PERIODO FISCAL Y MAPEO DE CABECERAS\n// =========================================================================\nlet llavesColumnas = {};\nlet indiceCabecera = -1;\n\nfor (let i = 0; i < Math.min(rawItems.length, 15); i++) {\n  const fila = rawItems[i].json;\n  const textoFila = JSON.stringify(fila);\n\n  // A. Intentamos extraer la fecha real de actualización del reporte\n  if (textoFila.includes(\"ACTUALIZACION\")) {\n    const match = textoFila.match(regexFechaActualizacion);\n    if (match) {\n      periodoFiscalDetectado = `${match[3]}-${match[2]}`; // Construye \"YYYY-MM\" (ej: \"2026-06\")\n    }\n  }\n\n  // B. Detectamos la fila exacta donde inician las cabeceras reales del directorio\n  if (textoFila.includes(\"RUC\") && textoFila.includes(\"EXPEDIENTE\")) {\n    indiceCabecera = i;\n    llavesColumnas = fila; // Guardamos el mapeo interno de propiedades de n8n (__EMPTY, __EMPTY_1...)\n    break;\n  }\n}\n\n// Fallback de contingencia si no se detecta la fecha en el archivo\nif (!periodoFiscalDetectado) {\n  const hoy = new Date();\n  periodoFiscalDetectado = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;\n}\n\n// Función auxiliar para revertir el formato monetario de Ecuador (\"48.200,00\" -> 48200.00)\nfunction parsearCapitalEcuador(val) {\n  if (val === undefined || val === null || val === '') return 0;\n  let limpio = val.toString().trim();\n  limpio = limpio.replace(/\\./g, ''); // Eliminamos puntos de miles\n  limpio = limpio.replace(/,/g, '.'); // Cambiamos coma decimal por punto lógico\n  const num = parseFloat(limpio);\n  return isNaN(num) ? 0 : num;\n}\n\n// Invertimos las llaves para poder buscar la columna de n8n dinámicamente por su nombre de texto real\nconst mapaInvertido = {};\nfor (const [claveN8n, nombreColumna] of Object.entries(llavesColumnas)) {\n  if (nombreColumna) {\n    mapaInvertido[nombreColumna.toString().trim().toUpperCase()] = claveN8n;\n  }\n}\n\n// =========================================================================\n// FASE 2: PROCESAMIENTO Y DEPURACIÓN MATRICIAL (Skip de cabeceras y basura)\n// =========================================================================\n// Iniciamos justo después de la fila de cabecera detectada\nconst inicioDatos = indiceCabecera !== -1 ? indiceCabecera + 1 : 5;\n\nfor (let i = inicioDatos; i < rawItems.length; i++) {\n  const data = rawItems[i].json;\n\n  // Extraemos las dimensiones clave usando nuestro mapa dinámico e indestructible\n  const ruc = data[mapaInvertido[\"RUC\"]] ? data[mapaInvertido[\"RUC\"]].toString().trim() : \"\";\n  const expediente = data[mapaInvertido[\"EXPEDIENTE\"]] ? data[mapaInvertido[\"EXPEDIENTE\"]].toString().trim() : \"\";\n  const nombreCompania = data[mapaInvertido[\"NOMBRE\"]] ? data[mapaInvertido[\"NOMBRE\"]].toString().trim() : \"\";\n  \n  // Escudo de seguridad: Si no hay RUC ni expediente válido, es una fila vacía o basura del pie de página\n  if (!ruc && !expediente) continue;\n  if (ruc === \"RUC\" || nombreCompania.includes(\"DIRECTORIO\")) continue;\n\n  // EL ESCUDO ANTI-SOBREESCRITURA (FECHA_FISCAL Compuesta)\n  // Combinamos el periodo del reporte con el identificador único de la empresa\n  const identificadorEmpresa = ruc || expediente;\n  const fechaFiscalClave = `${periodoFiscalDetectado}_${identificadorEmpresa}`.replace(/\\s+/g, '');\n\n  listaConsolidada.push({\n    json: {\n      INDICADOR: \"SUPERCIAS_DIRECTORIO\",\n      FECHA_FISCAL: fechaFiscalClave.substring(0, 150),\n      FECHA_EXTRACCION: new Date(),\n      ESTADO: \"COMPLETO\",\n      NECESITA_RESPALDO: 0,\n      DETALLE_ERROR: \"\",\n      DATOS_JSON: JSON.stringify({\n        periodo_reporte: periodoFiscalDetectado,\n        empresa_metadata: {\n          expediente: expediente,\n          ruc: ruc,\n          nombre: nombreCompania,\n          situacion_legal: data[mapaInvertido[\"SITUACIÓN LEGAL\"]] || \"\",\n          fecha_constitucion: data[mapaInvertido[\"FECHA_CONSTITUCION\"]] || \"\",\n          tipo_compania: data[mapaInvertido[\"TIPO\"]] || \"\"\n        },\n        ubicacion: {\n          pais: data[mapaInvertido[\"PAÍS\"]] || \"ECUADOR\",\n          region: data[mapaInvertido[\"REGIÓN\"]] || \"\",\n          provincia: data[mapaInvertido[\"PROVINCIA\"]] || \"\",\n          canton: data[mapaInvertido[\"CANTÓN\"]] || \"\",\n          ciudad: data[mapaInvertido[\"CIUDAD\"]] || \"\",\n          calle: data[mapaInvertido[\"CALLE\"]] || \"\",\n          numero: data[mapaInvertido[\"NÚMERO\"]] || \"\",\n          interseccion: data[mapaInvertido[\"INTERSECCIÓN\"]] || \"\",\n          barrio: data[mapaInvertido[\"BARRIO\"]] || \"\",\n          telefono: data[mapaInvertido[\"TELÉFONO\"]] || \"\"\n        },\n        financiero_ciiu: {\n          representante: data[mapaInvertido[\"REPRESENTANTE\"]] || \"\",\n          cargo: data[mapaInvertido[\"CARGO\"]] || \"\",\n          capital_suscrito: parsearCapitalEcuador(data[mapaInvertido[\"CAPITAL SUSCRITO\"]]),\n          ciiu_nivel1: data[mapaInvertido[\"CIIU NIVEL 1\"]] || \"\",\n          ciiu_nivel6: data[mapaInvertido[\"CIIU NIVEL 6\"]] || \"\",\n          ultimo_balance_anio: data[mapaInvertido[\"ÚLTIMO BALANCE\"]] || \"\"\n        },\n        fuente: \"Superintendencia de Compañías, Valores y Seguros del Ecuador\",\n        ruta_logica: \"SUPERCIAS/REPORTES/DIRECTORIO_COMPANIAS\"\n      })\n    }\n  });\n}\n\nreturn listaConsolidada;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        848
+      ],
+      "id": "85e5bbe5-0996-4492-b5c3-ed10f2b686d4",
+      "name": "Code_Transformar_Supercias_Directorio"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Capturamos el payload del error del HTTP que haya gatillado el nodo\nconst rawItem = $input.first().json;\nconst hoy = new Date();\n\n// 2. Formateamos la fecha de salvavidas para la FECHA_FISCAL (YYYY-MM-DD)\nconst anio = hoy.getFullYear();\nconst mes = String(hoy.getMonth() + 1).padStart(2, '0');\nconst dia = String(hoy.getDate()).padStart(2, '0');\nconst fechaFallback = `${anio}-${mes}-${dia}`;\n\nlet mensajeError = \"Error indeterminado en la ingesta de fuentes mensuales.\";\nlet urlAfectada = \"\";\n\n// Extraemos de forma segura el mensaje técnico y la URI del error de n8n\nif (rawItem.error) {\n  mensajeError = rawItem.error.message || JSON.stringify(rawItem.error);\n  // n8n suele adjuntar la URL del fallo en el objeto de contexto de Axios\n  urlAfectada = rawItem.error.context?.url || \"\";\n} else if (rawItem.message) {\n  mensajeError = rawItem.message;\n}\n\n// 3. ALGORITMO DE CLASIFICACIÓN DINÁMICA DE INDICADORES\n// Analizamos las firmas de texto en el error o la URL para saber a quién pertenece\nlet indicadorTarget = \"MENSUAL_DESCONOCIDO\";\nlet rutaLogicaTarget = \"COYUNTURA/MENSUAL/CONTINGENCIA\";\n\nconst rastroTexto = (mensajeError + \" \" + urlAfectada).toLowerCase();\n\nif (rastroTexto.includes(\"supercias\") || rastroTexto.includes(\"mercadodevalores\") || rastroTexto.includes(\"companias\")) {\n  indicadorTarget = \"SUPERCIAS_DIRECTORIO\";\n  rutaLogicaTarget = \"SUPERCIAS/REPORTES/DIRECTORIO_COMPANIAS\";\n} else if (rastroTexto.includes(\"enemdu\") || rastroTexto.includes(\"laboral\") || rastroTexto.includes(\"empleo\")) {\n  indicadorTarget = \"INEC_ENEMDU_MENSUAL\";\n  rutaLogicaTarget = \"INEC/ENEMDU/MENSUAL\";\n} else if (rastroTexto.includes(\"bce\") || rastroTexto.includes(\"central\") || rastroTexto.includes(\"reportes\")) {\n  indicadorTarget = \"BCE_MENSUAL_GENERAL\";\n  rutaLogicaTarget = \"BCE/MENSUAL/GENERAL\";\n}\n\n// 4. RETORNAMOS EL OBJETO DE AUDITORÍA HERIDO HOMOLOGADO PARA ORACLE\nreturn [{\n  json: {\n    INDICADOR: indicadorTarget, // ◄--- Mutación dinámica del indicador afectado\n    FECHA_FISCAL: `${fechaFallback}_ERR_MENSUAL`, // Llave controlada del día anti-duplicados\n    FECHA_EXTRACCION: hoy,\n    ESTADO: \"INCOMPLETO\",\n    NECESITA_RESPALDO: 1, // Enciende la bandera de soporte técnico en la base de datos\n    DETALLE_ERROR: `Fallo Crítico Mensual [${indicadorTarget}]: ${mensajeError}`.substring(0, 4000),\n    DATOS_JSON: JSON.stringify({\n      error: true,\n      fase: \"INGESTA_HTTP_MENSUAL\",\n      mensaje_tecnico: mensajeError,\n      url_origen: urlAfectada,\n      fuente: \"Consolidador de Contingencias Mensuales Orquestado\",\n      ruta_logica: rutaLogicaTarget\n    })\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        592
+      ],
+      "id": "cad0043f-7424-4134-9279-a3ed264bd00a",
+      "name": "Code_Error_Mensual"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "ADMIN",
+          "mode": "list",
+          "cachedResultName": "ADMIN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TAB_CONSOLIDADO_MACRO",
+          "mode": "list",
+          "cachedResultName": "TAB_CONSOLIDADO_MACRO"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "NECESITA_RESPALDO": 0,
+            "ID": 0
+          },
+          "matchingColumns": [
+            "FECHA_FISCAL",
+            "INDICADOR"
+          ],
+          "schema": [
+            {
+              "id": "DATOS_JSON",
+              "displayName": "DATOS_JSON",
+              "required": false,
+              "display": true,
+              "type": "object",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DETALLE_ERROR",
+              "displayName": "DETALLE_ERROR",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ESTADO",
+              "displayName": "ESTADO",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FECHA_EXTRACCION",
+              "displayName": "FECHA_EXTRACCION",
+              "required": true,
+              "display": true,
+              "type": "dateTime",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FECHA_FISCAL",
+              "displayName": "FECHA_FISCAL",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "INDICADOR",
+              "displayName": "INDICADOR",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NECESITA_RESPALDO",
+              "displayName": "NECESITA_RESPALDO",
+              "required": true,
+              "display": true,
+              "type": "number",
+              "defaultMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.oracleDatabase",
+      "typeVersion": 1,
+      "position": [
+        544,
+        624
+      ],
+      "id": "e81ae692-46e9-4409-81d6-6e5df784ed4d",
+      "name": "Oracle_Upsert_Mensual",
+      "credentials": {
+        "oracleDBApi": {
+          "id": "pj1OHkfwNfb3rbTy",
+          "name": "Credencial_one"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ \"/home/node/datos_macroentorno/bce/sector_real/bce_iee_\" + $now.toFormat(\"yyyyMMdd_HHmmss\") + \".xlsx\" }}",
+        "options": {
+          "append": false
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        208
+      ],
+      "id": "789dd83c-628c-4098-bd9c-6bcbedc66627",
+      "name": "Guardar_Archivo_BCE_IEE"
+    },
+    {
+      "parameters": {
+        "operation": "execute",
+        "query": "{{ $json.sql }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.oracleDatabase",
+      "typeVersion": 1,
+      "position": [
+        736,
+        880
+      ],
+      "id": "b01de81a-6dc4-40d8-865b-42c5e6b68a25",
+      "name": "Execute SQL",
+      "credentials": {
+        "oracleDBApi": {
+          "id": "pj1OHkfwNfb3rbTy",
+          "name": "Credencial_one"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const registros = $input.all().map(item => item.json);\n\nconst TAMANO_BLOQUE = 100;\n\nfunction texto(valor) {\n  if (valor === null || valor === undefined || valor === '') {\n    return 'NULL';\n  }\n  return \"'\" + String(valor).replace(/'/g, \"''\") + \"'\";\n}\n\nfunction numero(valor) {\n  if (valor === null || valor === undefined || valor === '') {\n    return 0;\n  }\n  return Number(valor);\n}\n\nfunction clob(valor) {\n  if (valor === null || valor === undefined || valor === '') {\n    return 'NULL';\n  }\n\n  const str = String(valor).replace(/'/g, \"''\");\n  const partes = [];\n\n  for (let i = 0; i < str.length; i += 3000) {\n    partes.push(`TO_CLOB('${str.slice(i, i + 3000)}')`);\n  }\n\n  return partes.join(' || ');\n}\n\nconst bloques = [];\n\nfor (let i = 0; i < registros.length; i += TAMANO_BLOQUE) {\n  const bloque = registros.slice(i, i + TAMANO_BLOQUE);\n\n  let sql = `BEGIN\\n`;\n\n  for (const r of bloque) {\n    sql += `\n      INSERT INTO ADMIN.TAB_CONSOLIDADO_MACRO (\n        INDICADOR,\n        FECHA_FISCAL,\n        FECHA_EXTRACCION,\n        ESTADO,\n        NECESITA_RESPALDO,\n        DETALLE_ERROR,\n        DATOS_JSON\n      ) VALUES (\n        ${texto(r.INDICADOR)},\n        ${texto(r.FECHA_FISCAL)},\n        ${texto(r.FECHA_EXTRACCION)},\n        ${texto(r.ESTADO)},\n        ${numero(r.NECESITA_RESPALDO)},\n        ${texto(r.DETALLE_ERROR)},\n        ${clob(r.DATOS_JSON)}\n      );\n    `;\n  }\n\n  sql += `\\nEND;`;\n\n  bloques.push({\n    json: {\n      sql,\n      desde: i + 1,\n      hasta: i + bloque.length,\n      total_bloque: bloque.length\n    }\n  });\n}\n\nreturn bloques;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        880
+      ],
+      "id": "6e495f8c-1b9a-4966-a084-cbb9505163ad",
+      "name": "Code_Generar_SQL_Bloques"
+    },
+    {
+      "parameters": {
+        "chatId": "5652987313",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        624
+      ],
+      "id": "55990e1f-8181-49ec-be88-4b8068343053",
+      "name": "Send a text message",
+      "webhookId": "6e74ee61-f01c-4f87-9353-bf42c2824ac1",
+      "credentials": {
+        "telegramApi": {
+          "id": "N1UHCDN3aV4RY55G",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fecha = new Date().toLocaleString('es-EC', {\n  timeZone: 'America/Guayaquil'\n});\n\nconst mensaje = `📊 REPORTE DE EJECUCIÓN RPA\n\n✅ Estado: COMPLETADO\n\n📌 Workflow: RPA_Macroentorno_Anual\n📂 Fuente procesada:\n• MINEDUC AMIE Costa\n\n🗄️ Base de datos: Oracle Cloud\n📋 Tabla: TAB_CONSOLIDADO_MACRO\n🔁 Operación: Carga por bloques\n\n📅 Fecha de ejecución: ${fecha}\n\n🟢 Resultado: Los datos fueron registrados correctamente en Oracle.`;\n\nreturn [\n  {\n    json: {\n      chat_id: \"5652987313\",\n      mensaje: mensaje\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        624
+      ],
+      "id": "b1c51082-4dc6-45e6-802e-21696547b9cb",
+      "name": "Code_Notificacion_Telegram"
+    },
+    {
+      "parameters": {
+        "chatId": "5652987313",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1248,
+        832
+      ],
+      "id": "34947f11-da9a-4c90-90f6-09726ff26864",
+      "name": "Send a text message1",
+      "webhookId": "6e74ee61-f01c-4f87-9353-bf42c2824ac1",
+      "credentials": {
+        "telegramApi": {
+          "id": "N1UHCDN3aV4RY55G",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fecha = new Date().toLocaleString('es-EC', {\n  timeZone: 'America/Guayaquil'\n});\n\nconst mensaje = `📊 REPORTE DE EJECUCIÓN RPA\n\n✅ Estado: COMPLETADO\n\n📌 Workflow: RPA_Macroentorno_Anual\n📂 Fuente procesada:\n• MINEDUC AMIE Costa\n\n🗄️ Base de datos: Oracle Cloud\n📋 Tabla: TAB_CONSOLIDADO_MACRO\n🔁 Operación: Carga por bloques\n\n📅 Fecha de ejecución: ${fecha}\n\n🟢 Resultado: Los datos fueron registrados correctamente en Oracle.`;\n\nreturn [\n  {\n    json: {\n      chat_id: \"5652987313\",\n      mensaje: mensaje\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        832
+      ],
+      "id": "f51b0952-3a5f-42bd-9e2e-ff3248d08e7e",
+      "name": "Code_Notificacion_Telegram1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule_Mensual": {
+      "main": [
+        [
+          {
+            "node": "HTTP_Supercias_Directorio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP_BCE_IEE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP_BCE_IEE": {
+      "main": [
+        [
+          {
+            "node": "Extraer_Excel_BCE_IEE",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Guardar_Archivo_BCE_IEE",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code_Error_Mensual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer_Excel_BCE_IEE": {
+      "main": [
+        [
+          {
+            "node": "Code_Transformar_BCE_IEE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Transformar_BCE_IEE": {
+      "main": [
+        [
+          {
+            "node": "Oracle_Upsert_Mensual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual_Trigger_Pruebas": {
+      "main": [
+        [
+          {
+            "node": "HTTP_BCE_IEE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP_Supercias_Directorio": {
+      "main": [
+        [
+          {
+            "node": "Guardar_Archivo_Supercias_Directorio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extraer_Excel_Supercias_Directorio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code_Error_Mensual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer_Excel_Supercias_Directorio": {
+      "main": [
+        [
+          {
+            "node": "Code_Transformar_Supercias_Directorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Transformar_Supercias_Directorio": {
+      "main": [
+        [
+          {
+            "node": "Code_Generar_SQL_Bloques",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Error_Mensual": {
+      "main": [
+        [
+          {
+            "node": "Oracle_Upsert_Mensual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Generar_SQL_Bloques": {
+      "main": [
+        [
+          {
+            "node": "Execute SQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Oracle_Upsert_Mensual": {
+      "main": [
+        [
+          {
+            "node": "Code_Notificacion_Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Notificacion_Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Notificacion_Telegram1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute SQL": {
+      "main": [
+        [
+          {
+            "node": "Code_Notificacion_Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "99660b68-0b35-44f0-9cb9-4a9506042435",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "64f29cb6425a0ce1588f057c636c31d92f742de34ad456e52867d70e9cbee73c"
+  },
+  "id": "4WKUeeF232tHe4ft",
+  "tags": []
+}

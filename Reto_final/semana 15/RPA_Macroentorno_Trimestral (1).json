@@ -1,0 +1,434 @@
+{
+  "name": "RPA_Macroentorno_Trimestral",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// 1. Apuntamos directamente a la llave binaria 'file_1' generada por el nodo Decompress\nconst archivoPlanoText = await this.helpers.getBinaryDataBuffer(0, 'file_1');\n\n// Soportamos el salto de línea del archivo CSV\nconst lineas = archivoPlanoText.toString('utf-8').split(/\\r?\\n/);\nconst listaFilasProcesadas = [];\n\n// Diccionario para traducir las abreviaturas de meses del INEC a formato numérico estándar\nconst mesesMap = {\n  ene: \"01\", feb: \"02\", mar: \"03\", abr: \"04\", may: \"05\", jun: \"06\",\n  jul: \"07\", ago: \"08\", sep: \"09\", oct: \"10\", nov: \"11\", dic: \"12\"\n};\n\n// Función para reparar el Mojibake (caracteres rotos por codificación) y limpiar espacios\nfunction sanitizarTextoInec(str) {\n  if (!str) return \"\";\n  return str.toString().trim()\n    .replace(/Poblacin/g, \"Población\")\n    .replace(/Econmicamente/g, \"Económicamente\")\n    .replace(/aos/g, \"años\")\n    .replace(/rea/g, \"Área\");\n}\n\n// Función para transformar los números con puntos de miles del INEC a enteros puros de JS\nfunction parsearNumeroInec(val) {\n  if (val === undefined || val === null) return 0;\n  let limpio = val.toString().replace(/[\\s\\u00A0]/g, '').trim();\n  if (limpio === '-' || limpio === '' || limpio === '.-') return 0;\n  limpio = limpio.replace(/\\./g, ''); // Removemos los puntos de miles\n  const num = parseInt(limpio, 10);\n  return isNaN(num) ? 0 : num;\n}\n\n// Función para normalizar el periodo (ej: \"dic-07\" -> \"2007-12\")\nfunction normalizarPeriodoInec(periodoRaw) {\n  const partes = periodoRaw.toLowerCase().split('-');\n  if (partes.length !== 2) return { texto: \"2007-12\", anio: 2007, mes: 12 };\n  \n  const mesAbrev = partes[0].trim();\n  const anioDosDigitos = partes[1].trim();\n  \n  const mesNum = mesesMap[mesAbrev] || \"12\";\n  const anioNum = parseInt(anioDosDigitos, 10);\n  \n  // Si el año es menor o igual a 50 asumimos siglo XXI (ej: 26 -> 2026), de lo contrario siglo XX\n  const anioCuatroDigitos = anioNum <= 50 ? 2000 + anioNum : 1900 + anioNum;\n  \n  return {\n    texto: `${anioCuatroDigitos}-${mesNum}`,\n    anio: anioCuatroDigitos,\n    mes: parseInt(mesNum, 10)\n  };\n}\n\n// Empezamos en la línea 3 para ignorar las filas vacías y de títulos estructurales del CSV\nfor (let i = 3; i < lineas.length; i++) {\n  const filaCruda = lineas[i];\n  if (!filaCruda.trim() || filaCruda.startsWith(';')) continue; \n\n  // Separación por punto y coma (;) típica de los tabulados del INEC\n  const celdas = filaCruda.split(';');\n\n  const encuesta = celdas[0] ? celdas[0].trim() : \"\";\n  const periodoRaw = celdas[1] ? celdas[1].trim() : \"\";\n  const indicadorNombre = celdas[2] ? sanitizarTextoInec(celdas[2]) : \"\";\n\n  // Si no hay indicador válido en la fila, nos la saltamos por seguridad\n  if (!indicadorNombre || indicadorNombre.includes(\"Indicadores\")) continue;\n\n  // Procesamos la fecha de forma dinámica\n  const fechaDinamica = normalizarPeriodoInec(periodoRaw);\n\n  // Creamos un slug limpio del indicador para construir nuestra FECHA_FISCAL única compuesta\n  const slugIndicador = indicadorNombre\n    .toLowerCase()\n    .replace(/[^a-z0-9]/g, '')\n    .substring(0, 25);\n\n  // FECHA_FISCAL COMPUESTA: Combinación perfecta anti-sobreescritura (Ej: \"2007-12_poblaciontotal\")\n  const fechaFiscalClave = `${fechaDinamica.texto}_${slugIndicador}`;\n\n  listaFilasProcesadas.push({\n    json: {\n      INDICADOR: \"INEC_ENEMDU_POBLACIONES\",\n      FECHA_FISCAL: fechaFiscalClave.substring(0, 150),\n      FECHA_EXTRACCION: new Date(),\n      ESTADO: \"COMPLETO\",\n      NECESITA_RESPALDO: 0,\n      DETALLE_ERROR: \"\",\n      DATOS_JSON: JSON.stringify({\n        encuesta: encuesta,\n        periodo_original: periodoRaw,\n        anio_fiscal: fechaDinamica.anio,\n        mes_fiscal: fechaDinamica.mes,\n        nombre_indicador: indicadorNombre,\n        metricas: {\n          nacional_total: parsearNumeroInec(celdas[3]),\n          area_urbana:    parsearNumeroInec(celdas[4]),\n          area_rural:     parsearNumeroInec(celdas[5]),\n          sexo_hombre:    parsearNumeroInec(celdas[6]),\n          sexo_mujer:     parsearNumeroInec(celdas[7])\n        },\n        fuente: \"Instituto Nacional de Estadística y Censos (INEC)\",\n        ruta_logica: \"INEC/ENEMDU/TABULADOS_1_POBLACIONES\"\n      })\n    }\n  });\n}\n\nreturn listaFilasProcesadas;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        640
+      ],
+      "id": "f8beea27-e7a0-485f-8ea5-ed23ba516c58",
+      "name": "Code_Transformar_ENEMDU"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "={{ \"/home/node/datos_macroentorno/inec/enemdu/inec_enemdu_\" + $(\"Identificar_Archivo_ZIP_ENEMDU\").first().json.FECHA_FISCAL.replace(\"-\", \"\") + \".zip\" }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        960
+      ],
+      "id": "240b6702-f960-468d-bc1f-02ed8e9e428c",
+      "name": "Guardar_ZIP_INEC_ENEMDU"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 3,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -544,
+        560
+      ],
+      "id": "cc71efb2-7cf6-405d-92f4-66c06079fd28",
+      "name": "Disparador_Trimestral_ENEMDU"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        848
+      ],
+      "id": "ba476bcf-5d5e-40b0-ad7e-6466497c1614",
+      "name": "Ejecucion_Manual_Pruebas"
+    },
+    {
+      "parameters": {
+        "url": "https://www.ecuadorencifras.gob.ec/estadisticas-laborales-enemdu/",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -240,
+        816
+      ],
+      "id": "61b0f35f-fa15-405b-9f38-970868be007b",
+      "name": "Consultar_Portal_INEC_ENEMDU",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Capturamos el HTML crudo entregado por el paso anterior\nconst htmlPuro = $input.first().json.data;\n\n// Expresión regular elástica: Busca cualquier URL dentro de un href que contenga el patrón exclusivo de los tabulados\nconst regexZipEnemdu = /href=\"([^\"]*Tabulados_Mercado_Laboral_CSV[^\"]*\\.zip)\"/i;\nconst coincidencia = htmlPuro.match(regexZipEnemdu);\n\n// Escudo de control de errores: Si el INEC cambia drásticamente la página, se activa la contingencia\nif (!coincidencia) {\n  throw new Error(\"Control de Contingencia: No se localizó el patrón 'Tabulados_Mercado_Laboral_CSV' en el portal del INEC.\");\n}\n\nconst urlZipCompleta = coincidencia[1];\n\n// 2. EXTRACCIÓN DINÁMICA DEL PERÍODO FISCAL\n// El INEC antepone el año y mes al archivo (ej: 202604_Tabulados...). Capturamos esos 6 dígitos.\nconst regexPeriodo = /(\\d{4})(\\d{2})_Tabulados/i;\nconst matchPeriodo = urlZipCompleta.match(regexPeriodo);\n\nlet fechaFiscalFormateada = \"\";\n\nif (matchPeriodo) {\n  const anio = matchPeriodo[1]; // \"2026\"\n  const mes = matchPeriodo[2];  // \"04\"\n  fechaFiscalFormateada = `${anio}-${mes}`; // Resultado homogéneo: \"2026-04\"\n} else {\n  // Fallback analítico por si remueven los dígitos del nombre del archivo\n  const fechaActual = new Date();\n  fechaFiscalFormateada = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}`;\n}\n\n// Retornamos el payload preparado para el inyector web y la auditoría\nreturn [{\n  json: {\n    INDICADOR: \"INEC_ENEMDU_TABULADOS\",\n    FECHA_FISCAL: fechaFiscalFormateada, // ◄--- Dinámica y automatizada (Evita duplicados)\n    URL_ZIP_DINAMICO: urlZipCompleta,    // ◄--- La URL real mutada del mes vigente\n    ESTADO: \"COMPLETO\",\n    NECESITA_RESPALDO: 0,\n    DETALLE_ERROR: \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        464
+      ],
+      "id": "61a366f2-4d45-4907-9a41-b1343df71f38",
+      "name": "Identificar_Archivo_ZIP_ENEMDU"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.URL_ZIP_DINAMICO }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        752
+      ],
+      "id": "3ff01ca7-b574-41f9-972c-0af2c2264bdc",
+      "name": "Descargar_Paquete_ENEMDU",
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        464,
+        656
+      ],
+      "id": "752374ef-87ff-4b59-9aa2-20cc8055f583",
+      "name": "Extraer_Contenido_ENEMDU"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "value": "ADMIN",
+          "mode": "list",
+          "cachedResultName": "ADMIN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "TAB_CONSOLIDADO_MACRO",
+          "mode": "list",
+          "cachedResultName": "TAB_CONSOLIDADO_MACRO"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "NECESITA_RESPALDO": 0,
+            "ID": 0
+          },
+          "matchingColumns": [
+            "FECHA_FISCAL",
+            "INDICADOR"
+          ],
+          "schema": [
+            {
+              "id": "DATOS_JSON",
+              "displayName": "DATOS_JSON",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "DETALLE_ERROR",
+              "displayName": "DETALLE_ERROR",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ESTADO",
+              "displayName": "ESTADO",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FECHA_EXTRACCION",
+              "displayName": "FECHA_EXTRACCION",
+              "required": true,
+              "display": true,
+              "type": "dateTime",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "FECHA_FISCAL",
+              "displayName": "FECHA_FISCAL",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ID",
+              "displayName": "ID",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "INDICADOR",
+              "displayName": "INDICADOR",
+              "required": true,
+              "display": true,
+              "type": "string",
+              "defaultMatch": true,
+              "removed": false
+            },
+            {
+              "id": "NECESITA_RESPALDO",
+              "displayName": "NECESITA_RESPALDO",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "defaultMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.oracleDatabase",
+      "typeVersion": 1,
+      "position": [
+        992,
+        448
+      ],
+      "id": "29fe9595-ee61-4a82-830b-781f67048739",
+      "name": "Cargar_ENEMDU_Oracle",
+      "credentials": {
+        "oracleDBApi": {
+          "id": "pj1OHkfwNfb3rbTy",
+          "name": "Credencial_one"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Capturamos el ítem que llega al nodo (con la metadata del error del HTTP que falló)\nconst rawItem = $input.first().json;\nconst hoy = new Date();\n\n// 2. Formateamos una fecha de fallback para la FECHA_FISCAL (YYYY-MM-DD)\nconst anio = hoy.getFullYear();\nconst mes = String(hoy.getMonth() + 1).padStart(2, '0');\nconst dia = String(hoy.getDate()).padStart(2, '0');\nconst fechaFallback = `${anio}-${mes}-${dia}`;\n\n// 3. Extracción molecular y segura del mensaje de error del HTTP anterior\nlet mensajeError = \"Fallo indeterminado en la conectividad con el servidor del INEC.\";\n\nif (rawItem.error) {\n  mensajeError = rawItem.error.message || JSON.stringify(rawItem.error);\n} else if (rawItem.message) {\n  mensajeError = rawItem.message;\n}\n\n// 4. Retornamos el payload de contingencia estructurado exactamente para Oracle\nreturn [{\n  json: {\n    INDICADOR: \"INEC_ENEMDU_POBLACIONES\",\n    FECHA_FISCAL: `${fechaFallback}_ERR_ENEMDU`, // Clave única controlada del día para el Upsert\n    FECHA_EXTRACCION: hoy,\n    ESTADO: \"INCOMPLETO\",\n    NECESITA_RESPALDO: 1, // ◄--- SE ENCIENDE LA BANDERA DE ALERTA EN ORACLE\n    DETALLE_ERROR: `Fallo Crítico en Pipeline de Ingesta: ${mensajeError}`.substring(0, 4000),\n    DATOS_JSON: JSON.stringify({\n      error: true,\n      fase: \"INGESTA_HTTP_ENEMDU\",\n      mensaje_tecnico: mensajeError,\n      fuente: \"Instituto Nacional de Estadística y Censos (INEC)\",\n      ruta_logica: \"INEC/ENEMDU/CONTINGENCIA_ERROR\"\n    })\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        448
+      ],
+      "id": "57411a96-2dbe-4cd7-a1e1-5937b65ec64c",
+      "name": "Registrar_Error_ENEMDU"
+    },
+    {
+      "parameters": {
+        "chatId": "5652987313",
+        "text": "={{ $json.mensaje }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1520,
+        448
+      ],
+      "id": "1fd07956-bb42-41e5-bc43-a8e16dd205f7",
+      "name": "Send a text message",
+      "webhookId": "6e74ee61-f01c-4f87-9353-bf42c2824ac1",
+      "credentials": {
+        "telegramApi": {
+          "id": "N1UHCDN3aV4RY55G",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fecha = new Date().toLocaleString('es-EC', {\n  timeZone: 'America/Guayaquil'\n});\n\nconst mensaje = `📊 REPORTE DE EJECUCIÓN RPA\n\n✅ Estado: COMPLETADO\n\n📌 Workflow: RPA_Macroentorno_Anual\n📂 Fuente procesada:\n• MINEDUC AMIE Costa\n\n🗄️ Base de datos: Oracle Cloud\n📋 Tabla: TAB_CONSOLIDADO_MACRO\n🔁 Operación: Carga por bloques\n\n📅 Fecha de ejecución: ${fecha}\n\n🟢 Resultado: Los datos fueron registrados correctamente en Oracle.`;\n\nreturn [\n  {\n    json: {\n      chat_id: \"5652987313\",\n      mensaje: mensaje\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        448
+      ],
+      "id": "64532604-bd0f-4f73-ba5b-bcdd30af3049",
+      "name": "Code_Notificacion_Telegram"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Code_Transformar_ENEMDU": {
+      "main": [
+        [
+          {
+            "node": "Cargar_ENEMDU_Oracle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ejecucion_Manual_Pruebas": {
+      "main": [
+        [
+          {
+            "node": "Consultar_Portal_INEC_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar_Portal_INEC_ENEMDU": {
+      "main": [
+        [
+          {
+            "node": "Identificar_Archivo_ZIP_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar_Error_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Identificar_Archivo_ZIP_ENEMDU": {
+      "main": [
+        [
+          {
+            "node": "Descargar_Paquete_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar_Paquete_ENEMDU": {
+      "main": [
+        [
+          {
+            "node": "Extraer_Contenido_ENEMDU",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Guardar_ZIP_INEC_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Registrar_Error_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer_Contenido_ENEMDU": {
+      "main": [
+        [
+          {
+            "node": "Code_Transformar_ENEMDU",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar_Error_ENEMDU": {
+      "main": [
+        [
+          {
+            "node": "Cargar_ENEMDU_Oracle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar_ENEMDU_Oracle": {
+      "main": [
+        [
+          {
+            "node": "Code_Notificacion_Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code_Notificacion_Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b51ec895-fa97-471d-a5f9-a2da90c2dfef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "64f29cb6425a0ce1588f057c636c31d92f742de34ad456e52867d70e9cbee73c"
+  },
+  "id": "1n8aM6NRnF6taFzi",
+  "tags": []
+}
